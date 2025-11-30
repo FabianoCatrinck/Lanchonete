@@ -1,0 +1,97 @@
+object TelaLogin: TTelaLogin
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Login'
+  ClientHeight = 167
+  ClientWidth = 162
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  KeyPreview = True
+  Position = poScreenCenter
+  OnKeyPress = FormKeyPress
+  OnShow = FormShow
+  TextHeight = 15
+  object PanelRodape: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 123
+    Width = 156
+    Height = 41
+    Align = alBottom
+    TabOrder = 0
+    object BotaoCancelar: TSpeedButton
+      AlignWithMargins = True
+      Left = 82
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Cancelar'
+      StyleName = 'Windows'
+      OnClick = BotaoCancelarClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoLogin: TSpeedButton
+      AlignWithMargins = True
+      Left = 6
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Login'
+      StyleName = 'Windows'
+      OnClick = BotaoLoginClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+  end
+  object PanelDados: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 3
+    Width = 156
+    Height = 114
+    Align = alClient
+    TabOrder = 1
+    object LabelUsuario: TLabel
+      Left = 24
+      Top = 8
+      Width = 98
+      Height = 15
+      Caption = 'C'#243'digo do usu'#225'rio'
+    end
+    object LabelSenha: TLabel
+      Left = 24
+      Top = 56
+      Width = 32
+      Height = 15
+      Caption = 'Senha'
+    end
+    object EditCodigoUsuario: TEdit
+      Left = 24
+      Top = 29
+      Width = 105
+      Height = 23
+      TabOrder = 0
+      OnKeyPress = EditCodigoUsuarioKeyPress
+    end
+    object EditSenha: TEdit
+      Left = 24
+      Top = 77
+      Width = 105
+      Height = 23
+      MaxLength = 10
+      PasswordChar = '*'
+      TabOrder = 1
+    end
+  end
+end

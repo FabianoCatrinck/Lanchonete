@@ -2,23 +2,23 @@
 <BorlandProject>
 	<Transactions>
     <Transaction>2025/11/27 21:33:06.000.042,=D:\EstudoDelphi\Unit1.pas</Transaction>
-    <Transaction>2025/11/27 21:36:05.000.329,D:\EstudoDelphi\Unit1.pas=D:\Lanchonete\src\TelaPrincipal.pas</Transaction>
-    <Transaction>2025/11/27 21:36:05.000.329,D:\EstudoDelphi\Unit1.dfm=D:\Lanchonete\src\TelaPrincipal.dfm</Transaction>
-    <Transaction>2025/11/27 21:36:17.000.670,D:\EstudoDelphi\Project1.dproj=D:\Lanchonete\src\Lanchonete.dproj</Transaction>
+    <Transaction>2025/11/27 21:36:05.000.329,D:\Lanchonete\src\TelaPrincipal.dfm=D:\EstudoDelphi\Unit1.dfm</Transaction>
+    <Transaction>2025/11/27 21:36:05.000.329,D:\Lanchonete\src\TelaPrincipal.pas=D:\EstudoDelphi\Unit1.pas</Transaction>
+    <Transaction>2025/11/27 21:36:17.000.670,D:\Lanchonete\src\Lanchonete.dproj=D:\EstudoDelphi\Project1.dproj</Transaction>
     <Transaction>2025/11/27 21:37:21.000.962,=D:\Lanchonete\src\Unit1.pas</Transaction>
-    <Transaction>2025/11/27 21:38:54.000.075,D:\Lanchonete\src\Unit1.dfm=D:\Lanchonete\src\Login.dfm</Transaction>
-    <Transaction>2025/11/27 21:38:54.000.075,D:\Lanchonete\src\Unit1.pas=D:\Lanchonete\src\Login.pas</Transaction>
+    <Transaction>2025/11/27 21:38:54.000.075,D:\Lanchonete\src\Login.pas=D:\Lanchonete\src\Unit1.pas</Transaction>
+    <Transaction>2025/11/27 21:38:54.000.075,D:\Lanchonete\src\Login.dfm=D:\Lanchonete\src\Unit1.dfm</Transaction>
     <Transaction>2025/11/27 21:44:05.000.971,D:\Lanchonete\src\TelaPrincipal.pas=</Transaction>
     <Transaction>2025/11/27 21:45:08.000.206,=D:\Lanchonete\src\Principal.pas</Transaction>
     <Transaction>2025/11/27 22:00:38.000.082,=D:\Lanchonete\src\Unit1.pas</Transaction>
-    <Transaction>2025/11/27 22:01:04.000.514,D:\Lanchonete\src\Unit1.dfm=D:\Lanchonete\src\DataModule.dfm</Transaction>
-    <Transaction>2025/11/27 22:01:04.000.514,D:\Lanchonete\src\Unit1.pas=D:\Lanchonete\src\DataModule.pas</Transaction>
+    <Transaction>2025/11/27 22:01:04.000.514,D:\Lanchonete\src\DataModule.dfm=D:\Lanchonete\src\Unit1.dfm</Transaction>
+    <Transaction>2025/11/27 22:01:04.000.514,D:\Lanchonete\src\DataModule.pas=D:\Lanchonete\src\Unit1.pas</Transaction>
     <Transaction>2025/11/27 22:31:47.000.766,=D:\Lanchonete\src\Unit1.pas</Transaction>
-    <Transaction>2025/11/27 22:32:48.000.980,D:\Lanchonete\src\Unit1.dfm=D:\Lanchonete\src\UsuarioConsulta.dfm</Transaction>
-    <Transaction>2025/11/27 22:32:48.000.980,D:\Lanchonete\src\Unit1.pas=D:\Lanchonete\src\UsuarioConsulta.pas</Transaction>
+    <Transaction>2025/11/27 22:32:48.000.980,D:\Lanchonete\src\UsuarioConsulta.pas=D:\Lanchonete\src\Unit1.pas</Transaction>
+    <Transaction>2025/11/27 22:32:48.000.980,D:\Lanchonete\src\UsuarioConsulta.dfm=D:\Lanchonete\src\Unit1.dfm</Transaction>
     <Transaction>2025/11/27 22:41:26.000.426,=D:\Lanchonete\src\Unit1.pas</Transaction>
-    <Transaction>2025/11/27 22:42:27.000.659,D:\Lanchonete\src\Unit1.pas=D:\Lanchonete\src\UsuarioCadastro.pas</Transaction>
-    <Transaction>2025/11/27 22:42:27.000.659,D:\Lanchonete\src\Unit1.dfm=D:\Lanchonete\src\UsuarioCadastro.dfm</Transaction>
+    <Transaction>2025/11/27 22:42:27.000.659,D:\Lanchonete\src\UsuarioCadastro.dfm=D:\Lanchonete\src\Unit1.dfm</Transaction>
+    <Transaction>2025/11/27 22:42:27.000.659,D:\Lanchonete\src\UsuarioCadastro.pas=D:\Lanchonete\src\Unit1.pas</Transaction>
     <Transaction>2025/11/27 22:51:19.000.867,=D:\Lanchonete\src\IngredienteCadastro.pas</Transaction>
     <Transaction>2025/11/27 22:51:20.000.096,=D:\Lanchonete\src\IngredienteConsulta.pas</Transaction>
     <Transaction>2025/11/27 23:01:52.000.744,=D:\Lanchonete\src\LancheConsulta.pas</Transaction>
@@ -29,7 +29,7 @@
     <Transaction>2025/11/27 23:17:00.000.401,=D:\Lanchonete\src\Relatorio.pas</Transaction>
     <Transaction>2025/11/27 23:19:58.000.041,=D:\Lanchonete\src\Sobre.pas</Transaction>
     <Transaction>2025/11/30 00:48:58.000.026,=D:\Lanchonete\src\Unit1.pas</Transaction>
-    <Transaction>2025/11/30 00:49:23.000.355,D:\Lanchonete\src\Unit1.pas=D:\Lanchonete\src\CotacaoDolar.pas</Transaction>
+    <Transaction>2025/11/30 00:49:23.000.355,D:\Lanchonete\src\CotacaoDolar.pas=D:\Lanchonete\src\Unit1.pas</Transaction>
     <Transaction>2025/11/30 13:39:04.000.140,=D:\Lanchonete\src\ClienteConsulta.pas</Transaction>
     <Transaction>2025/11/30 14:03:13.000.254,=D:\Lanchonete\src\ClienteCadastro.pas</Transaction>
   </Transactions>

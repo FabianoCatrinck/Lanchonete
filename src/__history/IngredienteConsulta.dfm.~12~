@@ -1,0 +1,109 @@
+object TelaIngredienteConsulta: TTelaIngredienteConsulta
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Consulta de Ingredientes'
+  ClientHeight = 441
+  ClientWidth = 542
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Position = poScreenCenter
+  OnClose = FormClose
+  OnCreate = FormCreate
+  TextHeight = 15
+  object PanelRodape: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 397
+    Width = 536
+    Height = 41
+    Align = alBottom
+    TabOrder = 0
+    object BotaoFechar: TSpeedButton
+      AlignWithMargins = True
+      Left = 462
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Fechar'
+      StyleName = 'Windows'
+      OnClick = BotaoFecharClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoIncluir: TSpeedButton
+      AlignWithMargins = True
+      Left = 234
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Incluir'
+      StyleName = 'Windows'
+      OnClick = BotaoIncluirClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoAlterar: TSpeedButton
+      AlignWithMargins = True
+      Left = 310
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Alterar'
+      StyleName = 'Windows'
+      OnClick = BotaoAlterarClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoExcluir: TSpeedButton
+      AlignWithMargins = True
+      Left = 386
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Excluir'
+      StyleName = 'Windows'
+      OnClick = BotaoExcluirClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+  end
+  object PanelDados: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 3
+    Width = 536
+    Height = 388
+    Align = alClient
+    TabOrder = 1
+    object DBGrid: TDBGrid
+      AlignWithMargins = True
+      Left = 4
+      Top = 4
+      Width = 528
+      Height = 380
+      Align = alClient
+      DataSource = Dados.DataSourceIngrediente
+      Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
+      TabOrder = 0
+      TitleFont.Charset = DEFAULT_CHARSET
+      TitleFont.Color = clWindowText
+      TitleFont.Height = -12
+      TitleFont.Name = 'Segoe UI'
+      TitleFont.Style = []
+    end
+  end
+end

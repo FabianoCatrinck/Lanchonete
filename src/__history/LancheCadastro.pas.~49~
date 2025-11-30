@@ -1,0 +1,419 @@
+unit LancheCadastro;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Vcl.Mask,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  Data.DB, FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  Vcl.DBCtrls, Vcl.Grids, Vcl.DBGrids, FireDAC.DatS, FireDAC.DApt.Intf,
+  FireDAC.Comp.DataSet;
+
+type
+  TTelaLancheCadastro = class(TForm)
+    PanelRodape: TPanel;
+    BotaoCancelar: TSpeedButton;
+    BotaoGravar: TSpeedButton;
+    PanelDados: TPanel;
+    LabelCodigo: TLabel;
+    LabelNome: TLabel;
+    LabelValor: TLabel;
+    EditCodigo: TEdit;
+    EditNome: TEdit;
+    EditValor: TMaskEdit;
+    PanelSelecaoIngrediente: TPanel;
+    LabelIngrediente: TLabel;
+    ComboBoxIngrediente: TDBLookupComboBox;
+    PanelListaIngredientes: TPanel;
+    DBGrid: TDBGrid;
+    BotaoAdicionar: TSpeedButton;
+    BotaoRemover: TSpeedButton;
+    IngredientesAdicionados: TFDMemTable;
+    DataSourceIngrediente: TDataSource;
+    IngredientesAdicionadosIdIngrediente: TIntegerField;
+    IngredientesAdicionadosNomeIngrediente: TStringField;
+    IngredientesAdicionadosValor: TFloatField;
+    IngredientesAdicionadosCodigoIngrediente: TIntegerField;
+    procedure BotaoCancelarClick(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure EditCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure BotaoGravarClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure EditValorKeyPress(Sender: TObject; var Key: Char);
+    procedure BotaoAdicionarClick(Sender: TObject);
+    procedure BotaoRemoverClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+  private
+    { Private declarations }
+    FTipoOperacao,   //C=Cadastro; E=Edição
+    FNome,
+    FCodigo: String;
+    FValor: Real;
+    FIdLanche: Integer;
+
+    procedure SetIdLanche(const Value: Integer);
+    function GetIdLanche(): Integer;
+    procedure SetValor(const Value: Real);
+    function GetValor(): Real;
+    procedure SetCodigo(const Value: String);
+    function GetCodigo(): String;
+    procedure SetNomeLanche(const Value: String);
+    function GetNomeLanche(): String;
+    procedure SetTipoOperacao(const Value: String);
+    function GetTipoOperacao(): String;
+    function ValidarCampos(): Boolean;
+    function CadastrarLanche(): Boolean;
+    function EditarLanche(): Boolean;
+    procedure AdicionarIngrediente();
+    procedure RemoverIngrediente();
+    procedure CadastrarIngredientesLanche(const IdLanche: Integer);
+  public
+    { Public declarations }
+    property TipoOperacao: String read GetTipoOperacao write SetTipoOperacao;
+    property Nome: String read GetNomeLanche write SetNomeLanche;
+    property Codigo: String read GetCodigo write SetCodigo;
+    property Valor: Real read GetValor write SetValor;
+    property IdLanche: Integer read GetIdLanche write SetIdLanche;
+  end;
+
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TTelaLancheCadastro.AdicionarIngrediente();
+var
+  ValorLanche: Real;
+begin
+  ValorLanche := StrToFloatDef(EditValor.Text, 0);
+
+  IngredientesAdicionados.AppendRecord([Dados.ConsultaIngrediente.FieldByName('IdIngrediente').AsString,
+    Dados.ConsultaIngrediente.FieldByName('CodigoIngrediente').AsString,
+    Dados.ConsultaIngrediente.FieldByName('NomeIngrediente').AsString,
+    Dados.ConsultaIngrediente.FieldByName('Valor').AsString]);
+
+  EditValor.Text := FloatToStr(ValorLanche + Dados.ConsultaIngrediente.FieldByName('Valor').AsFloat);
+end;
+
+procedure TTelaLancheCadastro.BotaoAdicionarClick(Sender: TObject);
+begin
+  AdicionarIngrediente();
+end;
+
+procedure TTelaLancheCadastro.BotaoCancelarClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaLancheCadastro.BotaoGravarClick(Sender: TObject);
+begin
+  if ValidarCampos then
+  begin
+    if FTipoOperacao = 'C' then
+      begin
+        if CadastrarLanche then
+        begin
+          ShowMessage('Lanche cadastrado com sucesso!');
+          Close;
+        end;
+      end
+    else
+      begin
+        if EditarLanche then
+        begin
+          ShowMessage('Lanche editado com sucesso!');
+          Close;
+        end;
+      end;
+  end;
+end;
+
+procedure TTelaLancheCadastro.BotaoRemoverClick(Sender: TObject);
+begin
+  RemoverIngrediente();
+end;
+
+procedure TTelaLancheCadastro.CadastrarIngredientesLanche(
+  const IdLanche: Integer);
+var
+  Ingrediente: TFDQuery;
+begin
+  Ingrediente := TFDQuery.Create(nil);
+
+  try
+    Ingrediente.Connection := Dados.FDConnection;
+
+    Ingrediente.SQL.Add('INSERT INTO LancheDetalheIngrediente (IdLancheDetalheIngrediente, IdLanche, IdIngrediente, Valor)');
+    Ingrediente.SQL.Add('VALUES (:IdLancheDetalheIngrediente, :IdLanche, :IdIngrediente, :Valor)');
+
+    Ingrediente.ParamByName('IdLancheDetalheIngrediente').AsInteger := Dados.GerarId('LancheDetalheIngrediente', 'IdLancheDetalheIngrediente');
+
+    IngredientesAdicionados.First;
+
+    while not IngredientesAdicionados.Eof do
+    begin
+      if IngredientesAdicionados.RecNo > 1 then
+        Ingrediente.ParamByName('IdLancheDetalheIngrediente').AsInteger := Ingrediente.ParamByName('IdLancheDetalheIngrediente').AsInteger + 1;
+
+      Ingrediente.ParamByName('IdLanche').AsInteger := IdLanche;
+      Ingrediente.ParamByName('IdIngrediente').AsInteger := IngredientesAdicionados.FieldByName('IdIngrediente').AsInteger;
+      Ingrediente.ParamByName('Valor').AsFloat := IngredientesAdicionados.FieldByName('Valor').AsFloat;
+
+      Ingrediente.ExecSQL;
+
+      IngredientesAdicionados.Next;
+    end;
+  finally
+    Ingrediente.Free;
+  end;
+end;
+
+function TTelaLancheCadastro.CadastrarLanche: Boolean;
+var
+  Lanche: TFDQuery;
+begin
+  Result := False;
+  Lanche := TFDQuery.Create(nil);
+
+  try
+    try
+      Lanche.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      if Dados.BuscarLanche(editCodigo.Text) then
+      begin
+        ShowMessage('Já existe um Lanche com este código!');
+        editCodigo.SetFocus;
+        Dados.FDConnection.Rollback;
+        Exit;
+      end;
+
+      Lanche.SQL.Add('INSERT INTO Lanche (IdLanche, CodigoLanche, NomeLanche, Valor)');
+      Lanche.SQL.Add('VALUES (:IdLanche, :CodigoLanche, :NomeLanche, :Valor)');
+
+      Lanche.ParamByName('IdLanche').AsInteger := Dados.GerarId('Lanche', 'IdLanche');
+      Lanche.ParamByName('CodigoLanche').AsString := editCodigo.Text;
+      Lanche.ParamByName('NomeLanche').AsString := editNome.Text;
+      Lanche.ParamByName('Valor').AsFloat := StrToFloatDef(EditValor.Text, 0);
+
+      Lanche.ExecSQL;
+
+      CadastrarIngredientesLanche(Lanche.ParamByName('IdLanche').AsInteger);
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o Lanche: ' + E.Message);
+      end;
+    end;
+
+  finally
+    Lanche.Free;
+  end;
+
+end;
+
+function TTelaLancheCadastro.EditarLanche: Boolean;
+var
+  Lanche: TFDQuery;
+begin
+  Result := False;
+  Lanche := TFDQuery.Create(nil);
+
+  try
+    try
+      Lanche.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Lanche.SQL.Add('UPDATE Lanche');
+      Lanche.SQL.Add('SET NomeLanche = :NomeLanche, Valor = :Valor ');
+      Lanche.SQL.Add('WHERE CodigoLanche = :CodigoLanche');
+
+      Lanche.ParamByName('CodigoLanche').AsString := editCodigo.Text;
+      Lanche.ParamByName('NomeLanche').AsString := editNome.Text;
+      Lanche.ParamByName('Valor').AsFloat := StrtoFloat(editValor.Text);
+
+      Lanche.ExecSQL;
+
+      Dados.ApagarIngredientes(FIdLanche, False);
+      CadastrarIngredientesLanche(FIdLanche);
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o Lanche: ' + E.Message);
+      end;
+    end;
+  finally
+    Lanche.Free;
+  end;
+
+end;
+
+procedure TTelaLancheCadastro.EditCodigoKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #9, #13]) then
+  begin
+    Key := #0;
+  end;
+end;
+
+procedure TTelaLancheCadastro.EditValorKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9','.',',', #8, #9, #13]) then
+  begin
+    Key := #0;
+  end;
+end;
+
+procedure TTelaLancheCadastro.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  IngredientesAdicionados.EmptyDataSet;
+end;
+
+procedure TTelaLancheCadastro.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    Perform(WM_NEXTDLGCTL, 0, 0);
+  end;
+end;
+
+procedure TTelaLancheCadastro.FormShow(Sender: TObject);
+begin
+  EditCodigo.Enabled := FTipoOperacao = 'C';
+
+  if not Dados.ConsultaIngrediente.Active then
+    Dados.ConsultaIngrediente.CreateDataSet;
+
+  if not IngredientesAdicionados.Active then
+    IngredientesAdicionados.CreateDataSet;
+
+  if FTipoOperacao = 'E' then
+    begin
+      EditCodigo.Text := FCodigo;
+      EditNome.Text := FNome;
+      EditValor.Text := FloatToStr(FValor);
+
+      Dados.CarregarIngredientes(FIdLanche, IngredientesAdicionados);
+    end;
+end;
+
+function TTelaLancheCadastro.GetCodigo: String;
+begin
+  Result := FCodigo;
+end;
+
+function TTelaLancheCadastro.GetIdLanche: Integer;
+begin
+  Result := FIdLanche;
+end;
+
+function TTelaLancheCadastro.GetNomeLanche: String;
+begin
+  Result := FNome;
+end;
+
+function TTelaLancheCadastro.GetTipoOperacao: String;
+begin
+  Result := FTipoOperacao;
+end;
+
+function TTelaLancheCadastro.GetValor: Real;
+begin
+  Result := FValor;
+end;
+
+procedure TTelaLancheCadastro.RemoverIngrediente;
+var
+  ValorLanche: Real;
+begin
+  ValorLanche := StrToFloatDef(EditValor.Text, 0) - IngredientesAdicionados.FieldByName('Valor').AsFloat;
+
+  IngredientesAdicionados.Delete;
+
+  if IngredientesAdicionados.IsEmpty then
+    ValorLanche := 0;
+
+  EditValor.Text := FloatToStr(ValorLanche);
+end;
+
+procedure TTelaLancheCadastro.SetCodigo(const Value: String);
+begin
+  FCodigo := Value;
+end;
+
+procedure TTelaLancheCadastro.SetIdLanche(const Value: Integer);
+begin
+  FIdLanche := Value;
+end;
+
+procedure TTelaLancheCadastro.SetNomeLanche(const Value: String);
+begin
+  FNome := Value;
+end;
+
+procedure TTelaLancheCadastro.SetTipoOperacao(const Value: String);
+begin
+  FTipoOperacao := Value;
+end;
+
+procedure TTelaLancheCadastro.SetValor(const Value: Real);
+begin
+  FValor := Value;
+end;
+
+function TTelaLancheCadastro.ValidarCampos: Boolean;
+begin
+  Result := False;
+
+  if Trim(editCodigo.Text) = '' then
+  begin
+    ShowMessage('Informe o código do lanche.');
+    editCodigo.SetFocus;
+    Exit;
+  end;
+
+  if Trim(editNome.Text) = '' then
+  begin
+    ShowMessage('Informe o nome do lanche.');
+    editNome.SetFocus;
+    Exit;
+  end;
+
+  if StrToFloatDef(editValor.Text, 0) = 0 then
+  begin
+    ShowMessage('Informe um valor válido.');
+    editValor.SetFocus;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+end.

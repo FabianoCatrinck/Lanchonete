@@ -1,0 +1,320 @@
+unit UsuarioCadastro;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  Data.DB, FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param;
+
+type
+  TTelaUsuarioCadastro = class(TForm)
+    PanelRodape: TPanel;
+    BotaoCancelar: TSpeedButton;
+    BotaoGravar: TSpeedButton;
+    PanelDados: TPanel;
+    LabelCodigo: TLabel;
+    LabelNome: TLabel;
+    EditCodigo: TEdit;
+    EditNome: TEdit;
+    LabelSenha: TLabel;
+    LabelConfirmeSenha: TLabel;
+    EditSenha: TEdit;
+    EditConfirmeSenha: TEdit;
+    ComboBoxTipoDeAcesso: TComboBox;
+    LabelTipoDeAcesso: TLabel;
+    procedure BotaoCancelarClick(Sender: TObject);
+    procedure BotaoGravarClick(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure EditCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure FormShow(Sender: TObject);
+  private
+    { Private declarations }
+    FUsuarioCadastrado: Boolean;
+    FTipoOperacao,
+    FNomeUsuario,
+    FTipoAcesso,
+    FCodigo: String;//C=Cadastro; E=Edição
+
+    procedure SetCodigo(const Value: String);
+    function GetCodigo(): String;
+    procedure SetTipoAcesso(const Value: String);
+    function GetTipoAcesso(): String;
+    procedure SetNomeUsuario(const Value: String);
+    function GetNomeUsuario(): String;
+    procedure SetTipoOperacao(const Value: String);
+    function GetTipoOperacao(): String;
+    procedure SetUsuarioCadastrado(const Value: Boolean);
+    function GetUsuarioCadastrado(): Boolean;
+    function ValidarCampos(): Boolean;
+    function CadastrarUsuario(): Boolean;
+    function EditarUsuario(): Boolean;
+  public
+    { Public declarations }
+    property UsuarioCadastrado: Boolean read GetUsuarioCadastrado write SetUsuarioCadastrado;
+    property TipoOperacao: String read GetTipoOperacao write SetTipoOperacao;
+    property NomeUsuario: String read GetNomeUsuario write SetNomeUsuario;
+    property TipoAcesso: String read GetTipoAcesso write SetTipoAcesso;
+    property Codigo: String read GetCodigo write SetCodigo;
+
+  end;
+
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TTelaUsuarioCadastro.BotaoCancelarClick(Sender: TObject);
+begin
+  FUsuarioCadastrado := False;
+  Close;
+end;
+
+procedure TTelaUsuarioCadastro.BotaoGravarClick(Sender: TObject);
+begin
+  if ValidarCampos then
+  begin
+    if FTipoOperacao = 'C' then
+      begin
+        if CadastrarUsuario then
+        begin
+          ShowMessage('Usuário cadastrado com sucesso!');
+          FUsuarioCadastrado := True;
+          Close;
+        end;
+      end
+    else
+      begin
+        if EditarUsuario then
+        begin
+          ShowMessage('Usuário editado com sucesso!');
+          FUsuarioCadastrado := True;
+          Close;
+        end;
+      end;
+  end;
+end;
+
+function TTelaUsuarioCadastro.EditarUsuario: Boolean;
+var
+  Usuario: TFDQuery;
+begin
+  Result := False;
+  Usuario := TFDQuery.Create(nil);
+
+  try
+    try
+      Usuario.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Usuario.SQL.Add('UPDATE Usuario');
+      Usuario.SQL.Add('SET NomeUsuario = :NomeUsuario, Senha = :Senha, TipoAcessoUsuario = :TipoAcessoUsuario)');
+      Usuario.SQL.Add('WHERE CodigoUsuario = : CodigoUsuario');
+
+      Usuario.ParamByName('CodigoUsuario').AsString := editCodigo.Text;
+      Usuario.ParamByName('NomeUsuario').AsString := editNome.Text;
+      Usuario.ParamByName('Senha').AsString := Dados.SenhaHash(editSenha.Text);
+      Usuario.ParamByName('TipoAcessoUsuario').AsString := IntToStr(ComboBoxTipoDeAcesso.ItemIndex);
+
+      Usuario.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o usuário: ' + E.Message);
+      end;
+    end;
+  finally
+    Usuario.Free;
+  end;
+end;
+
+procedure TTelaUsuarioCadastro.EditCodigoKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #9, #13]) then
+  begin
+    Key := #0;
+  end;
+end;
+
+procedure TTelaUsuarioCadastro.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    Perform(WM_NEXTDLGCTL, 0, 0);
+  end;
+end;
+
+procedure TTelaUsuarioCadastro.FormShow(Sender: TObject);
+begin
+  EditCodigo.Enabled := FTipoOperacao = 'C';
+
+  if FTipoOperacao = 'E' then
+  begin
+    EditCodigo.Text := FCodigo;
+    EditNome.Text := FNome;
+    ComboBoxTipoDeAcesso.ItemIndex := StrToInt(FTipoAcesso);
+  end;
+end;
+
+function TTelaUsuarioCadastro.GetCodigo: String;
+begin
+  Result := FCodigo;
+end;
+
+function TTelaUsuarioCadastro.GetNomeUsuario: String;
+begin
+  Result := FNomeUsuario;
+end;
+
+function TTelaUsuarioCadastro.GetTipoAcesso: String;
+begin
+  Result := FTipoAcesso;
+end;
+
+function TTelaUsuarioCadastro.GetTipoOperacao(): String;
+begin
+  Result := FTipoOperacao;
+end;
+
+function TTelaUsuarioCadastro.GetUsuarioCadastrado: Boolean;
+begin
+  Result := FUsuarioCadastrado;
+end;
+
+function TTelaUsuarioCadastro.CadastrarUsuario(): Boolean;
+var
+  Usuario: TFDQuery;
+begin
+  Result := False;
+  Usuario := TFDQuery.Create(nil);
+
+  try
+    try
+      Usuario.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      if Dados.BuscarUsuario(editCodigo.Text) then
+      begin
+        ShowMessage('Já existe um usuário com este código!');
+        editCodigo.SetFocus;
+        Dados.FDConnection.Rollback; // Libera lock
+        Exit;
+      end;
+
+      Usuario.SQL.Add('INSERT INTO Usuario (IdUsuario, CodigoUsuario, NomeUsuario, Senha, TipoAcessoUsuario)');
+      Usuario.SQL.Add('VALUES (:IdUsuario, :CodigoUsuario, :NomeUsuario, :Senha, :TipoAcessoUsuario)');
+
+      Usuario.ParamByName('IdUsuario').AsInteger := Dados.GerarId('Usuario', 'IdUsuario');
+      Usuario.ParamByName('CodigoUsuario').AsString := editCodigo.Text;
+      Usuario.ParamByName('NomeUsuario').AsString := editNome.Text;
+      Usuario.ParamByName('Senha').AsString := Dados.SenhaHash(editSenha.Text);
+      Usuario.ParamByName('TipoAcessoUsuario').AsString := IntToStr(ComboBoxTipoDeAcesso.ItemIndex);
+
+      Usuario.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o usuário: ' + E.Message);
+      end;
+    end;
+
+  finally
+    Usuario.Free;
+  end;
+end;
+
+procedure TTelaUsuarioCadastro.SetCodigo(const Value: String);
+begin
+  FCodigo := Value;
+end;
+
+procedure TTelaUsuarioCadastro.SetNomeUsuario(const Value: String);
+begin
+  FNomeUsuario := Value;
+end;
+
+procedure TTelaUsuarioCadastro.SetTipoAcesso(const Value: String);
+begin
+  FTipoAcesso := Value;
+end;
+
+procedure TTelaUsuarioCadastro.SetTipoOperacao(const Value: String);
+begin
+  FTipoOperacao := Value;
+end;
+
+procedure TTelaUsuarioCadastro.SetUsuarioCadastrado(const Value: Boolean);
+begin
+  FUsuarioCadastrado := Value;
+end;
+
+function TTelaUsuarioCadastro.ValidarCampos: Boolean;
+begin
+  Result := False;
+
+  if Trim(editCodigo.Text) = '' then
+  begin
+    ShowMessage('Informe o código do usuário.');
+    editCodigo.SetFocus;
+    Exit;
+  end;
+
+  if Trim(editNome.Text) = '' then
+  begin
+    ShowMessage('Informe o nome do usuário.');
+    editNome.SetFocus;
+    Exit;
+  end;
+
+  if Trim(editSenha.Text) = '' then
+  begin
+    ShowMessage('Informe uma senha.');
+    editSenha.SetFocus;
+    Exit;
+  end;
+
+  if editSenha.Text <> EditConfirmeSenha.Text then
+  begin
+    ShowMessage('As senhas precisam ser iguais!');
+    editSenha.Clear;
+    EditConfirmeSenha.Clear;
+    editSenha.SetFocus;
+    Exit;
+  end;
+
+  if ComboBoxTipoDeAcesso.ItemIndex = -1 then
+  begin
+    ShowMessage('Selecione o tipo de acesso.');
+    ComboBoxTipoDeAcesso.SetFocus;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+end.

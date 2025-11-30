@@ -1,0 +1,39 @@
+unit Relatorio;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls;
+
+type
+  TTelaRelatorio = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    BotaoIncluir: TSpeedButton;
+    BotaoAlterar: TSpeedButton;
+    BotaoExcluir: TSpeedButton;
+    GrupoTipoRelatório: TRadioGroup;
+    EditDataInicial: TDateTimePicker;
+    LabelData: TLabel;
+    procedure BotaoFecharClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+procedure TTelaRelatorio.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+end.

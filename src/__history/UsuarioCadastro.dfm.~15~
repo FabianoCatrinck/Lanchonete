@@ -1,0 +1,146 @@
+object TelaUsuarioCadastro: TTelaUsuarioCadastro
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Usu'#225'rio'
+  ClientHeight = 161
+  ClientWidth = 551
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  KeyPreview = True
+  Position = poScreenCenter
+  OnKeyPress = FormKeyPress
+  TextHeight = 15
+  object PanelRodape: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 117
+    Width = 545
+    Height = 41
+    Align = alBottom
+    TabOrder = 0
+    object BotaoCancelar: TSpeedButton
+      AlignWithMargins = True
+      Left = 471
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Cancelar'
+      StyleName = 'Windows'
+      OnClick = BotaoCancelarClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoGravar: TSpeedButton
+      AlignWithMargins = True
+      Left = 395
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Gravar'
+      StyleName = 'Windows'
+      OnClick = BotaoGravarClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+  end
+  object PanelDados: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 3
+    Width = 545
+    Height = 108
+    Align = alClient
+    TabOrder = 1
+    object LabelCodigo: TLabel
+      Left = 8
+      Top = 8
+      Width = 39
+      Height = 15
+      Caption = 'C'#243'digo'
+    end
+    object LabelNome: TLabel
+      Left = 103
+      Top = 8
+      Width = 33
+      Height = 15
+      Caption = 'Nome'
+    end
+    object LabelSenha: TLabel
+      Left = 8
+      Top = 58
+      Width = 32
+      Height = 15
+      Caption = 'Senha'
+    end
+    object LabelConfirmeSenha: TLabel
+      Left = 103
+      Top = 58
+      Width = 93
+      Height = 15
+      Caption = 'Confirme a senha'
+    end
+    object LabelTipoDeAcesso: TLabel
+      Left = 366
+      Top = 8
+      Width = 77
+      Height = 15
+      Caption = 'Tipo de acesso'
+    end
+    object EditCodigo: TEdit
+      Left = 8
+      Top = 29
+      Width = 89
+      Height = 23
+      CharCase = ecUpperCase
+      TabOrder = 0
+      OnKeyPress = EditCodigoKeyPress
+    end
+    object EditNome: TEdit
+      Left = 103
+      Top = 29
+      Width = 257
+      Height = 23
+      CharCase = ecUpperCase
+      TabOrder = 1
+    end
+    object EditSenha: TEdit
+      Left = 8
+      Top = 79
+      Width = 89
+      Height = 23
+      MaxLength = 10
+      PasswordChar = '*'
+      TabOrder = 3
+    end
+    object EditConfirmeSenha: TEdit
+      Left = 103
+      Top = 79
+      Width = 89
+      Height = 23
+      PasswordChar = '*'
+      TabOrder = 4
+    end
+    object ComboBoxTipoDeAcesso: TComboBox
+      Left = 366
+      Top = 29
+      Width = 163
+      Height = 23
+      Style = csDropDownList
+      TabOrder = 2
+      Items.Strings = (
+        'Completo'
+        'Gerenciar lanches'
+        'Cadastrar ingredientes')
+    end
+  end
+end

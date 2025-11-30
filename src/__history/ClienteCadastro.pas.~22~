@@ -1,0 +1,275 @@
+unit ClienteCadastro;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  Data.DB, FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  Vcl.ComCtrls;
+
+type
+  TTelaClienteCadastro = class(TForm)
+    PanelRodape: TPanel;
+    BotaoCancelar: TSpeedButton;
+    BotaoGravar: TSpeedButton;
+    PanelDados: TPanel;
+    LabelCodigo: TLabel;
+    LabelNome: TLabel;
+    EditCodigo: TEdit;
+    EditNome: TEdit;
+    EditData: TDateTimePicker;
+    LabelData: TLabel;
+    procedure BotaoCancelarClick(Sender: TObject);
+    procedure BotaoGravarClick(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure EditCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure FormShow(Sender: TObject);
+  private
+    { Private declarations }
+    FTipoOperacao, //C=Cadastro; E=Edição
+    FNomeCliente,
+    FCodigo: String;
+    FIdCliente: Integer;
+    FData: TDate;
+
+    procedure SetIdCliente(const Value: Integer);
+    function GetIdCliente(): Integer;
+    procedure SetData(const Value: TDate);
+    function GetData(): TDate;
+    procedure SetCodigo(const Value: String);
+    function GetCodigo(): String;
+    procedure SetNomeCliente(const Value: String);
+    function GetNomeCliente(): String;
+    procedure SetTipoOperacao(const Value: String);
+    function GetTipoOperacao(): String;
+    function ValidarCampos(): Boolean;
+    function CadastrarCliente(): Boolean;
+    function EditarCliente(): Boolean;
+  public
+    { Public declarations }
+    property TipoOperacao: String read GetTipoOperacao write SetTipoOperacao;
+    property NomeCliente: String read GetNomeCliente write SetNomeCliente;
+    property Codigo: String read GetCodigo write SetCodigo;
+    property Data: TDate read GetData write SetData;
+    property IdCliente: Integer read GetIdCliente write SetIdCliente;
+  end;
+
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TTelaClienteCadastro.BotaoCancelarClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaClienteCadastro.BotaoGravarClick(Sender: TObject);
+begin
+  if ValidarCampos then
+  begin
+    if FTipoOperacao = 'C' then
+      begin
+        if CadastrarCliente then
+        begin
+          ShowMessage('Cliente cadastrado com sucesso!');
+          Close;
+        end;
+      end
+    else
+      begin
+        if EditarCliente then
+        begin
+          ShowMessage('Cliente editado com sucesso!');
+          Close;
+        end;
+      end;
+  end;
+end;
+
+function TTelaClienteCadastro.EditarCliente: Boolean;
+var
+  Cliente: TFDQuery;
+begin
+  Result := False;
+  Cliente := TFDQuery.Create(nil);
+
+  try
+    try
+      Cliente.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Cliente.SQL.Add('UPDATE Cliente');
+      Cliente.SQL.Add('SET NomeCliente = :NomeCliente ');
+      Cliente.SQL.Add('WHERE IdCliente = :IdCliente');
+
+      Cliente.ParamByName('IdCliente').AsInteger := FIdCliente;
+      Cliente.ParamByName('NomeCliente').AsString := editNome.Text;
+
+      Cliente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o cliente: ' + E.Message);
+      end;
+    end;
+  finally
+    Cliente.Free;
+  end;
+end;
+
+procedure TTelaClienteCadastro.EditCodigoKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #9, #13]) then
+  begin
+    Key := #0;
+  end;
+end;
+
+procedure TTelaClienteCadastro.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    Perform(WM_NEXTDLGCTL, 0, 0);
+  end;
+end;
+
+procedure TTelaClienteCadastro.FormShow(Sender: TObject);
+begin
+  EditCodigo.Enabled := FTipoOperacao = 'C';
+
+  if FTipoOperacao = 'E' then
+  begin
+    EditCodigo.Text := FCodigo;
+    EditNome.Text := FNomeCliente;
+    EditData.Date := FData;
+  end;
+end;
+
+function TTelaClienteCadastro.GetCodigo: String;
+begin
+  Result := FCodigo;
+end;
+
+function TTelaClienteCadastro.GetNomeCliente: String;
+begin
+  Result := FNomeCliente;
+end;
+
+function TTelaClienteCadastro.GetData: TDate;
+begin
+  Result := FData;
+end;
+
+function TTelaClienteCadastro.GetTipoOperacao(): String;
+begin
+  Result := FTipoOperacao;
+end;
+
+function TTelaClienteCadastro.CadastrarCliente(): Boolean;
+var
+  Cliente: TFDQuery;
+begin
+  Result := False;
+  Cliente := TFDQuery.Create(nil);
+
+  try
+    try
+      Cliente.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      if Dados.BuscarUsuario(editCodigo.Text) then
+      begin
+        ShowMessage('Já existe um cliente com este código!');
+        editCodigo.SetFocus;
+        Dados.FDConnection.Rollback;
+        Exit;
+      end;
+
+      Cliente.SQL.Add('INSERT INTO Cliente (IdCliente, CodigoCliente, NomeCliente, Data)');
+      Cliente.SQL.Add('VALUES (:IdCliente, :CodigoCliente, :NomeCliente, :Data)');
+
+      Cliente.ParamByName('IdCliente').AsInteger := Dados.GerarId('Cliente', 'IdCliente');
+      Cliente.ParamByName('CodigoCliente').AsString := editCodigo.Text;
+      Cliente.ParamByName('NomeCliente').AsString := editNome.Text;
+      Cliente.ParamByName('Data').AsDateTime := EditData.Date;
+
+      Cliente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+
+    except
+      on E: Exception do
+      begin
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o cliente: ' + E.Message);
+      end;
+    end;
+
+  finally
+    Cliente.Free;
+  end;
+end;
+
+procedure TTelaClienteCadastro.SetCodigo(const Value: String);
+begin
+  FCodigo := Value;
+end;
+
+procedure TTelaClienteCadastro.SetNomeCliente(const Value: String);
+begin
+  FNomeCliente := Value;
+end;
+
+procedure TTelaClienteCadastro.SetData(const Value: TDate);
+begin
+  FData := Value;
+end;
+
+procedure TTelaClienteCadastro.SetTipoOperacao(const Value: String);
+begin
+  FTipoOperacao := Value;
+end;
+
+function TTelaClienteCadastro.ValidarCampos: Boolean;
+begin
+  Result := False;
+
+  if Trim(editCodigo.Text) = '' then
+  begin
+    ShowMessage('Informe o código do cliente.');
+    editCodigo.SetFocus;
+    Exit;
+  end;
+
+  if Trim(editNome.Text) = '' then
+  begin
+    ShowMessage('Informe o nome do cliente.');
+    editNome.SetFocus;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+end.

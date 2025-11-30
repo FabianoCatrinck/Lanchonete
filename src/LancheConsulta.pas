@@ -1,0 +1,152 @@
+unit LancheConsulta;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  System.UITypes;
+
+type
+  TTelaLancheConsulta = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    BotaoIncluir: TSpeedButton;
+    BotaoAlterar: TSpeedButton;
+    BotaoExcluir: TSpeedButton;
+    DBGrid: TDBGrid;
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure BotaoIncluirClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+    procedure BotaoAlterarClick(Sender: TObject);
+    procedure BotaoExcluirClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure ApagarLanche(const IdLanche: Integer);
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses LancheCadastro, DataModule;
+
+procedure TTelaLancheConsulta.ApagarLanche(const IdLanche: Integer);
+var
+  Lanche: TFDQuery;
+begin
+  Lanche := TFDQuery.Create(nil);
+
+  try
+    try
+      Lanche.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Lanche.SQL.Add('DELETE FROM Lanche ');
+      Lanche.SQL.Add('WHERE IdLanche = :IdLanche');
+
+      Lanche.ParamByName('IdLanche').AsInteger := IdLanche;
+
+      Lanche.ExecSQL;
+
+      Dados.ApagarIngredientes(IdLanche);
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      ShowMessage('Lanche apagado com sucesso.');
+
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o Lanche: ' + E.Message);
+      end;
+    end;
+  finally
+    Lanche.Free;
+  end;
+
+end;
+
+procedure TTelaLancheConsulta.BotaoAlterarClick(Sender: TObject);
+var
+  TelaLancheCadastro: TTelaLancheCadastro;
+begin
+  TelaLancheCadastro := TTelaLancheCadastro.Create(nil);
+
+  try
+    TelaLancheCadastro.TipoOperacao := 'E';
+    TelaLancheCadastro.Nome := Dados.ConsultaLanche.FieldByName('NomeLanche').AsString;
+    TelaLancheCadastro.Valor := Dados.ConsultaLanche.FieldByName('Valor').AsFloat;
+    TelaLancheCadastro.Codigo := Dados.ConsultaLanche.FieldByName('CodigoLanche').AsString;
+    TelaLancheCadastro.IdLanche := Dados.ConsultaLanche.FieldByName('IdLanche').AsInteger;
+    TelaLancheCadastro.ShowModal;
+    Dados.ConsultaLanche.Close;
+    Dados.ConsultaLanche.Open;
+  finally
+    FreeAndNil(TelaLancheCadastro);
+  end;
+end;
+
+procedure TTelaLancheConsulta.BotaoExcluirClick(Sender: TObject);
+begin
+  if not Dados.ConsultaLanche.IsEmpty then
+    if MessageDlg('Confirma a exclusão do lanche?', mtConfirmation, [mbYes,mbNo], 0) = mrYes then
+    begin
+      ApagarLanche(Dados.ConsultaLanche.FieldByName('IdLanche').AsInteger);
+      Dados.ConsultaLanche.Close;
+      Dados.ConsultaLanche.Open;
+    end;
+end;
+
+procedure TTelaLancheConsulta.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaLancheConsulta.BotaoIncluirClick(Sender: TObject);
+var
+  TelaLancheCadastro: TTelaLancheCadastro;
+begin
+  TelaLancheCadastro := TTelaLancheCadastro.Create(nil);
+
+  try
+    TelaLancheCadastro.TipoOperacao := 'C';
+    TelaLancheCadastro.ShowModal;
+    Dados.ConsultaLanche.Close;
+    Dados.ConsultaLanche.Open;
+  finally
+    FreeAndNil(TelaLancheCadastro);
+  end;
+end;
+
+procedure TTelaLancheConsulta.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  Dados.ConsultaLanche.Close;
+end;
+
+procedure TTelaLancheConsulta.FormCreate(Sender: TObject);
+begin
+  if not Dados.ConsultaLanche.Active then
+    Dados.ConsultaLanche.CreateDataSet;
+
+  DBGrid.DataSource := Dados.DataSourceLanche;
+end;
+
+end.

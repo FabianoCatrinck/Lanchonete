@@ -1,0 +1,81 @@
+unit Relatorio;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls;
+
+type
+  TTelaRelatorio = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    BotaoImprimir: TSpeedButton;
+    GrupoTipoRelatório: TRadioGroup;
+    EditDataInicial: TDateTimePicker;
+    LabelData: TLabel;
+    EditDataFinal: TDateTimePicker;
+    LabelDataFinal: TLabel;
+    procedure BotaoFecharClick(Sender: TObject);
+  private
+    { Private declarations }
+    function MontarSQLPedidos(): String;
+    function MontarSQLLanches(): String;
+    function MontarSQLIngredientes(): String;
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+procedure TTelaRelatorio.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+function TTelaRelatorio.MontarSQLIngredientes(): String;
+var
+  SQL: String;
+begin
+  //Ingredientes mais utilizados..
+  SQL := ' select count(pi.idingrediente) as quantidade, pi.idingrediente, i.nomeingrediente '+
+         ' from PedidoDetalheIngrediente pi ' +
+         ' join ingrediente i on i.idingrediente = pi.idingrediente ' +
+         ' group by i.idingrediente ';
+
+  Result := SQL;
+end;
+
+function TTelaRelatorio.MontarSQLLanches(): String;
+var
+  SQL: String;
+begin
+  //Lanches mais vendidos.
+  SQL := ' select count(pl.idlanche) as quantidade, pl.idlanche, l.nomelanche  '+
+         ' from PedidoDetalheLanche pl ' +
+         ' join lanche l on l.IdLanche = pl.idlanche ' +
+         ' group by l.idlanche ';
+
+  Result := SQL;
+end;
+
+function TTelaRelatorio.MontarSQLPedidos(): String;
+var
+  SQL: String;
+begin
+  //Total de pedidos realizados em um período
+  SQL := ' select sum(valor) as total   '+
+         ' from pedido ' +
+         ' where data between :Inicio and :fim ';
+
+  Result := SQL;
+
+end;
+
+end.

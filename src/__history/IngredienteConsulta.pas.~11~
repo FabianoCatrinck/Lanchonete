@@ -1,0 +1,147 @@
+unit IngredienteConsulta;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  System.UITypes;
+
+type
+  TTelaIngredienteConsulta = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    BotaoIncluir: TSpeedButton;
+    BotaoAlterar: TSpeedButton;
+    BotaoExcluir: TSpeedButton;
+    DBGrid: TDBGrid;
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure BotaoIncluirClick(Sender: TObject);
+    procedure BotaoAlterarClick(Sender: TObject);
+    procedure BotaoExcluirClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+  private
+    { Private declarations }
+    procedure ApagarIngrediente(const IdIngrediente: Integer);
+
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses IngredienteCadastro, DataModule;
+
+procedure TTelaIngredienteConsulta.ApagarIngrediente(const IdIngrediente: Integer);
+var
+  Ingrediente: TFDQuery;
+begin
+  Ingrediente := TFDQuery.Create(nil);
+
+  try
+    try
+      Ingrediente.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Ingrediente.SQL.Add('DELETE FROM Ingrediente ');
+      Ingrediente.SQL.Add('WHERE IdIngrediente = :IdIngrediente');
+
+      Ingrediente.ParamByName('IdIngrediente').AsInteger := IdIngrediente;
+
+      Ingrediente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      ShowMessage('Ingrediente apagado com sucesso.');
+
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o Ingrediente: ' + E.Message);
+      end;
+    end;
+  finally
+    Ingrediente.Free;
+  end;
+end;
+
+procedure TTelaIngredienteConsulta.BotaoAlterarClick(Sender: TObject);
+var
+  TelaIngredienteCadastro: TTelaIngredienteCadastro;
+begin
+  TelaIngredienteCadastro := TTelaIngredienteCadastro.Create(nil);
+
+  try
+    TelaIngredienteCadastro.TipoOperacao := 'E';
+    TelaIngredienteCadastro.Nome := Dados.ConsultaIngrediente.FieldByName('NomeIngrediente').AsString;
+    TelaIngredienteCadastro.Valor := Dados.ConsultaIngrediente.FieldByName('Valor').AsString;
+    TelaIngredienteCadastro.Codigo := Dados.ConsultaIngrediente.FieldByName('CodigoIngrediente').AsString;
+    TelaIngredienteCadastro.ShowModal;
+    Dados.ConsultaIngrediente.Close;
+    Dados.ConsultaIngrediente.Open;
+  finally
+    FreeAndNil(TelaIngredienteCadastro);
+  end;
+end;
+
+procedure TTelaIngredienteConsulta.BotaoExcluirClick(Sender: TObject);
+begin
+  if not Dados.ConsultaIngrediente.IsEmpty then
+    if MessageDlg('Confirma a exclusão do ingrediente?', mtConfirmation, [mbYes,mbNo], 0) = mrYes then
+    begin
+      ApagarIngrediente(Dados.ConsultaIngrediente.FieldByName('IdIngrediente').AsInteger);
+      Dados.ConsultaIngrediente.Close;
+      Dados.ConsultaIngrediente.Open;
+    end;
+end;
+
+procedure TTelaIngredienteConsulta.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaIngredienteConsulta.BotaoIncluirClick(Sender: TObject);
+var
+  TelaIngredienteCadastro: TTelaIngredienteCadastro;
+begin
+  TelaIngredienteCadastro := TTelaIngredienteCadastro.Create(nil);
+
+  try
+    TelaIngredienteCadastro.TipoOperacao := 'C';
+    TelaIngredienteCadastro.ShowModal;
+    Dados.ConsultaIngrediente.Close;
+    Dados.ConsultaIngrediente.Open;
+  finally
+    FreeAndNil(TelaIngredienteCadastro);
+  end;
+end;
+
+procedure TTelaIngredienteConsulta.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  Dados.ConsultaIngrediente.Close;
+end;
+
+procedure TTelaIngredienteConsulta.FormCreate(Sender: TObject);
+begin
+  Dados.ConsultaIngrediente.CreateDataSet;
+  DBGrid.DataSource := Dados.DataSourceIngrediente;
+end;
+
+end.

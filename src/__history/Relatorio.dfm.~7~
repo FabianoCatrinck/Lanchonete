@@ -1,0 +1,115 @@
+﻿object TelaRelatorio: TTelaRelatorio
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  Caption = 'Relat'#243'rios'
+  ClientHeight = 202
+  ClientWidth = 541
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Position = poScreenCenter
+  TextHeight = 15
+  object PanelRodape: TPanel
+    Left = 0
+    Top = 161
+    Width = 541
+    Height = 41
+    Align = alBottom
+    TabOrder = 0
+    ExplicitTop = 400
+    ExplicitWidth = 624
+    object BotaoFechar: TSpeedButton
+      AlignWithMargins = True
+      Left = 467
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Fechar'
+      StyleName = 'Windows'
+      OnClick = BotaoFecharClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoImprimir: TSpeedButton
+      AlignWithMargins = True
+      Left = 391
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Imprimir'
+      StyleName = 'Windows'
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+  end
+  object PanelDados: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 3
+    Width = 535
+    Height = 155
+    Align = alClient
+    TabOrder = 1
+    ExplicitLeft = 0
+    ExplicitTop = -2
+    ExplicitWidth = 624
+    ExplicitHeight = 400
+    object LabelData: TLabel
+      Left = 12
+      Top = 96
+      Width = 58
+      Height = 15
+      Caption = 'Data inicial'
+    end
+    object LabelDataFinal: TLabel
+      Left = 108
+      Top = 96
+      Width = 50
+      Height = 15
+      Caption = 'Data final'
+    end
+    object GrupoTipoRelatório: TRadioGroup
+      AlignWithMargins = True
+      Left = 4
+      Top = 4
+      Width = 527
+      Height = 85
+      Align = alTop
+      Caption = ' Escolha uma op'#231#227'o '
+      Columns = 2
+      ItemIndex = 0
+      Items.Strings = (
+        'Total de pedidos realizados em um per'#237'odo'
+        'Lanches mais vendidos'
+        'Ingredientes mais utilizados')
+      TabOrder = 0
+      ExplicitWidth = 610
+    end
+    object EditDataInicial: TDateTimePicker
+      Left = 12
+      Top = 117
+      Width = 90
+      Height = 23
+      Date = 45991.000000000000000000
+      Time = 0.005888506944756955
+      TabOrder = 1
+    end
+    object EditDataFinal: TDateTimePicker
+      Left = 108
+      Top = 117
+      Width = 90
+      Height = 23
+      Date = 45991.000000000000000000
+      Time = 0.005888506944756955
+      TabOrder = 2
+    end
+  end
+end

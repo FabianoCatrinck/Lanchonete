@@ -1,0 +1,603 @@
+unit PedidoCadastro;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Vcl.Mask,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  Data.DB, FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  Vcl.DBCtrls, Vcl.Grids, Vcl.DBGrids, FireDAC.DatS, FireDAC.DApt.Intf,
+  FireDAC.Comp.DataSet, Vcl.ComCtrls;
+
+type
+  TTelaPedidoCadastro = class(TForm)
+    PanelRodape: TPanel;
+    BotaoCancelar: TSpeedButton;
+    BotaoGravar: TSpeedButton;
+    PanelDados: TPanel;
+    LabelCodigo: TLabel;
+    LabelData: TLabel;
+    LabelValor: TLabel;
+    EditIdPedido: TEdit;
+    EditValor: TMaskEdit;
+    PanelSelecaoLanche: TPanel;
+    LabelLanche: TLabel;
+    ComboBoxLanche: TDBLookupComboBox;
+    PanelListaLanche: TPanel;
+    BotaoAdicionarLanche: TSpeedButton;
+    BotaoRemoverLanche: TSpeedButton;
+    DBGrid: TDBGrid;
+    DataSourceIngrediente: TDataSource;
+    IngredientesAdicionais: TFDMemTable;
+    IngredientesAdicionaisIdIngrediente: TIntegerField;
+    IngredientesAdicionaisCodigoIngrediente: TIntegerField;
+    IngredientesAdicionaisNomeIngrediente: TStringField;
+    IngredientesAdicionaisValor: TFloatField;
+    EditData: TDateTimePicker;
+    EditValorEmDolar: TMaskEdit;
+    LabelValorDolar: TLabel;
+    StatusBar: TStatusBar;
+    CheckBoxIngredienteAdicional: TCheckBox;
+    DataSourceLanche: TDataSource;
+    LanchesAdicionados: TFDMemTable;
+    IntegerField1: TIntegerField;
+    IntegerField2: TIntegerField;
+    StringField1: TStringField;
+    FloatField1: TFloatField;
+    PanelSelecaoIngrediente: TPanel;
+    LabelIngrediente: TLabel;
+    PanelListaIngrediente: TPanel;
+    BotaoAdicionar: TSpeedButton;
+    BotaoRemover: TSpeedButton;
+    DBGrid1: TDBGrid;
+    ComboBoxIngrediente: TDBLookupComboBox;
+    IngredientesAdicionaisIdLanche: TIntegerField;
+    LanchesAdicionadosIdPedidoDetalheLanche: TIntegerField;
+    IngredientesAdicionaisIdPedidoDetalheLanche: TIntegerField;
+    IngredientesAdicionaisIdPedidoDetalheLanche2: TIntegerField;
+    ComboBoxCliente: TDBLookupComboBox;
+    LabelCliente: TLabel;
+    procedure BotaoCancelarClick(Sender: TObject);
+    procedure BotaoGravarClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure BotaoAdicionarLancheClick(Sender: TObject);
+    procedure BotaoRemoverLancheClick(Sender: TObject);
+    procedure CheckBoxIngredienteAdicionalClick(Sender: TObject);
+    procedure BotaoAdicionarClick(Sender: TObject);
+    procedure BotaoRemoverClick(Sender: TObject);
+  private
+    { Private declarations }
+    FTipoOperacao: String;   //C=Cadastro; E=Edição
+    FData: TDate;
+    FIngredienteAdicional: String;
+    FValor,
+    FValorDolar: Real;
+    FIdPedido,
+    FIdCliente: Integer;
+
+    procedure SetIdCliente(const Value: Integer);
+    function GetIdCliente(): Integer;
+    procedure SetIdPedido(const Value: Integer);
+    function GetIdPedido(): Integer;
+    procedure SetValor(const Value: Real);
+    function GetValor(): Real;
+    procedure SetData(const Value: TDate);
+    function GetData(): TDate;
+    procedure SetIngredienteAdicional(const Value: String);
+    function GetIngredienteAdicional(): String;
+    procedure SetTipoOperacao(const Value: String);
+    function GetTipoOperacao(): String;
+    function CadastrarPedido(): Boolean;
+    function EditarPedido(): Boolean;
+    procedure AdicionarIngredienteExtra();
+    procedure RemoverIngredienteExtra();
+    procedure CadastrarIngredientesAdicionais();
+    function ObterCotacaoDolar(): Real;
+    procedure AdicionarLanche();
+    procedure RemoverLanche();
+    procedure CadastrarLanchesAdicionados(const IdPedido: Integer);
+    function AplicarDesconto(): Real;
+  public
+    { Public declarations }
+    property TipoOperacao: String read GetTipoOperacao write SetTipoOperacao;
+    property IngredienteAdicional: String read GetIngredienteAdicional write SetIngredienteAdicional;
+    property Data: TDate read GetData write SetData;
+    property Valor: Real read GetValor write SetValor;
+    property IdPedido: Integer read GetIdPedido write SetIdPedido;
+    property IdCliente: Integer read GetIdCliente write SetIdCliente;
+  end;
+
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule, CotacaoDolar;
+
+procedure TTelaPedidoCadastro.AdicionarIngredienteExtra();
+var
+  ValorLanche: Real;
+  IdPedidoDetalheIngrediente: Integer;
+begin
+  ValorLanche := StrToFloatDef(EditValor.Text, 0);
+
+  if IngredientesAdicionais.IsEmpty then
+    IdPedidoDetalheIngrediente := Dados.GerarId('PedidoDetalheIngrediente', 'IdPedidoDetalheIngrediente')
+  else
+    IdPedidoDetalheIngrediente := IngredientesAdicionais.FieldByName('IdPedidoDetalheIngrediente').AsInteger + 1;
+
+  IngredientesAdicionais.AppendRecord([IdPedidoDetalheIngrediente,
+    LanchesAdicionados.FieldByName('IdPedidoDetalheLanche').AsString,
+    LanchesAdicionados.FieldByName('IdLanche').AsString,
+    Dados.ConsultaIngrediente.FieldByName('IdIngrediente').AsString,
+    Dados.ConsultaIngrediente.FieldByName('CodigoIngrediente').AsString,
+    Dados.ConsultaIngrediente.FieldByName('NomeIngrediente').AsString,
+    Dados.ConsultaIngrediente.FieldByName('Valor').AsString]);
+
+  EditValor.Text := FloatToStr(ValorLanche + Dados.ConsultaIngrediente.FieldByName('Valor').AsFloat);
+  EditValorEmDolar.Text := FormatFloat('#,##0.00', FValorDolar * (ValorLanche + Dados.ConsultaIngrediente.FieldByName('Valor').AsFloat));
+end;
+
+procedure TTelaPedidoCadastro.AdicionarLanche();
+var
+  ValorLanche: Real;
+  IdPedidoDetalheLanche: Integer;
+begin
+  ValorLanche := StrToFloatDef(EditValor.Text, 0);
+
+  if LanchesAdicionados.IsEmpty then
+    IdPedidoDetalheLanche := Dados.GerarId('PedidoDetalheLanche', 'IdPedidoDetalheLanche')
+  else
+    IdPedidoDetalheLanche := LanchesAdicionados.FieldByName('IdPedidoDetalheLanche').AsInteger + 1;
+
+  LanchesAdicionados.AppendRecord([IdPedidoDetalheLanche,
+    Dados.ConsultaLanche.FieldByName('IdLanche').AsString,
+    Dados.ConsultaLanche.FieldByName('CodigoLanche').AsString,
+    Dados.ConsultaLanche.FieldByName('NomeLanche').AsString,
+    Dados.ConsultaLanche.FieldByName('Valor').AsString]);
+
+  EditValor.Text := FloatToStr(ValorLanche + Dados.ConsultaLanche.FieldByName('Valor').AsFloat);
+  EditValorEmDolar.Text := FormatFloat('#,##0.00', FValorDolar * (ValorLanche + Dados.ConsultaLanche.FieldByName('Valor').AsFloat));
+  CheckBoxIngredienteAdicional.Enabled := True;
+end;
+
+function TTelaPedidoCadastro.AplicarDesconto(): Real;
+var
+  ValorDesconto: Real;
+begin
+  if FValor > 50 then
+    ValorDesconto := (FValor * 3) / 100;
+
+  //Cliente cadastrado há mais de 6 meses
+  if IncMonth(Date, -6) >= Dados.ConsultaCliente.FieldByName('Data').AsDateTime then
+    ValorDesconto := ValorDesconto + ((FValor * 5) / 100);
+
+  FValor := FValor - ValorDesconto;
+end;
+
+procedure TTelaPedidoCadastro.BotaoAdicionarClick(Sender: TObject);
+begin
+  AdicionarIngredienteExtra();
+end;
+
+procedure TTelaPedidoCadastro.BotaoAdicionarLancheClick(Sender: TObject);
+begin
+  AdicionarLanche();
+end;
+
+procedure TTelaPedidoCadastro.BotaoCancelarClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaPedidoCadastro.BotaoGravarClick(Sender: TObject);
+begin
+  if FTipoOperacao = 'C' then
+    begin
+      if CadastrarPedido then
+      begin
+        ShowMessage('Pedido cadastrado com sucesso!');
+        Close;
+      end;
+    end
+  else
+    begin
+      if EditarPedido then
+      begin
+        ShowMessage('Pedido editado com sucesso!');
+        Close;
+      end;
+    end;
+end;
+
+procedure TTelaPedidoCadastro.BotaoRemoverClick(Sender: TObject);
+begin
+  RemoverIngredienteExtra();
+end;
+
+procedure TTelaPedidoCadastro.BotaoRemoverLancheClick(Sender: TObject);
+begin
+  RemoverLanche();
+end;
+
+procedure TTelaPedidoCadastro.CadastrarIngredientesAdicionais();
+var
+  Ingrediente: TFDQuery;
+begin
+  Ingrediente := TFDQuery.Create(nil);
+
+  try
+    Ingrediente.Connection := Dados.FDConnection;
+
+    Ingrediente.SQL.Add('INSERT INTO PedidoDetalheIngrediente (IdPedidoDetalheIngrediente, IdPedidoDetalheLanche , IdIngrediente, Valor)');
+    Ingrediente.SQL.Add('VALUES (:IdPedidoDetalheIngrediente, :IdPedidoDetalheLanche , :IdIngrediente, :Valor)');
+
+    IngredientesAdicionais.First;
+
+    while not IngredientesAdicionais.Eof do
+    begin
+      Ingrediente.ParamByName('IdPedidoDetalheIngrediente').AsInteger := IngredientesAdicionais.FieldByName('IdPedidoDetalheIngrediente').AsInteger;
+      Ingrediente.ParamByName('IdPedidoDetalheLanche').AsInteger := IngredientesAdicionais.FieldByName('IdPedidoDetalheLanche').AsInteger;
+      Ingrediente.ParamByName('IdIngrediente').AsInteger := IngredientesAdicionais.FieldByName('IdIngrediente').AsInteger;
+      Ingrediente.ParamByName('Valor').AsFloat := IngredientesAdicionais.FieldByName('Valor').AsFloat;
+
+      Ingrediente.ExecSQL;
+
+      IngredientesAdicionais.Next;
+    end;
+  finally
+    Ingrediente.Free;
+  end;
+end;
+
+procedure TTelaPedidoCadastro.CadastrarLanchesAdicionados(
+  const IdPedido: Integer);
+var
+  Lanche: TFDQuery;
+begin
+  Lanche := TFDQuery.Create(nil);
+
+  try
+    Lanche.Connection := Dados.FDConnection;
+
+    Lanche.SQL.Add('INSERT INTO PedidoDetalheLanche (IdPedidoDetalheLanche, IdPedido, IdLanche, Valor)');
+    Lanche.SQL.Add('VALUES (:IdPedidoDetalheLanche, :IdPedido, :IdLanche, :Valor)');
+
+    //Lanche.ParamByName('IdPedidoDetalheLanche').AsInteger := Dados.GerarId('PedidoDetalheLanche', 'IdPedidoDetalheLanche');
+
+    LanchesAdicionados.First;
+
+    while not LanchesAdicionados.Eof do
+    begin
+      Lanche.ParamByName('IdPedidoDetalheLanche').AsInteger := LanchesAdicionados.FieldByName('IdPedidoDetalheLanche').AsInteger;
+      Lanche.ParamByName('IdPedido').AsInteger := StrToInt(EditIdPedido.Text);
+      Lanche.ParamByName('IdLanche').AsInteger := LanchesAdicionados.FieldByName('IdLanche').AsInteger;
+      Lanche.ParamByName('Valor').AsFloat := LanchesAdicionados.FieldByName('Valor').AsFloat;
+
+      Lanche.ExecSQL;
+
+      LanchesAdicionados.Next;
+    end;
+  finally
+    Lanche.Free;
+  end;
+end;
+
+function TTelaPedidoCadastro.CadastrarPedido: Boolean;
+var
+  Pedido: TFDQuery;
+begin
+  Pedido := TFDQuery.Create(nil);
+  Result := False;
+
+  try
+    try
+      Pedido.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Pedido.SQL.Add('INSERT INTO Pedido (IdPedido, IdUsuario, Data, Valor, IngredienteAdicional, IdCliente)');
+      Pedido.SQL.Add('VALUES (:IdPedido, :IdUsuario, :Data, :Valor, :IngredienteAdicional, :IdCliente)');
+
+      Pedido.ParamByName('IdPedido').AsInteger := StrToInt(EditIdPedido.Text);
+      Pedido.ParamByName('IdUsuario').AsInteger := Dados.CodigoUsuario;
+      Pedido.ParamByName('Data').AsDate := Date;
+      Pedido.ParamByName('Valor').AsFloat := StrToFloatDef(EditValor.Text, 0);
+
+  	  if CheckBoxIngredienteAdicional.Checked then
+	      Pedido.ParamByName('IngredienteAdicional').AsString := 'S'
+	    else
+	      Pedido.ParamByName('IngredienteAdicional').AsString := 'N';
+
+      Pedido.ParamByName('IdCliente').AsInteger := ComboBoxCliente.KeyValue;
+
+      Pedido.ExecSQL;
+
+      if not LanchesAdicionados.IsEmpty then
+      begin
+        CadastrarLanchesAdicionados(Pedido.ParamByName('IdPedido').AsInteger);
+
+        if not IngredientesAdicionais.IsEmpty then
+        begin
+          CadastrarIngredientesAdicionais();
+        end;
+      end;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o Pedido: ' + E.Message);
+      end;
+    end;
+
+  finally
+    Pedido.Free;
+  end;
+
+end;
+
+procedure TTelaPedidoCadastro.CheckBoxIngredienteAdicionalClick(
+  Sender: TObject);
+begin
+  if not CheckBoxIngredienteAdicional.Checked then
+    IngredientesAdicionais.EmptyDataSet;
+
+  PanelSelecaoIngrediente.Enabled := CheckBoxIngredienteAdicional.Checked;
+  PanelListaIngrediente.Enabled := PanelSelecaoIngrediente.Enabled;
+end;
+
+function TTelaPedidoCadastro.EditarPedido: Boolean;
+var
+  Pedido: TFDQuery;
+begin
+  Result := False;
+  Pedido := TFDQuery.Create(nil);
+
+  try
+    try
+      Pedido.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Pedido.SQL.Add('UPDATE Pedido');
+      Pedido.SQL.Add('SET IdUsuario = :IdUsuario, Valor = :Valor, Data = :Data, IngredienteAdicional = :IngredienteAdicional, IdCliente = :IdCliente');
+      Pedido.SQL.Add('WHERE IdPedido = :IdPedido');
+
+	    Pedido.ParamByName('IdUsuario').AsInteger := Dados.CodigoUsuario;
+      Pedido.ParamByName('IdPedido').AsInteger := FIdPedido;
+      Pedido.ParamByName('Data').AsDate := Date;
+      Pedido.ParamByName('Valor').AsFloat := StrtoFloat(editValor.Text);
+
+	   	if CheckBoxIngredienteAdicional.Checked then
+	      Pedido.ParamByName('IngredienteAdicional').AsString := 'S'
+	    else
+	      Pedido.ParamByName('IngredienteAdicional').AsString := 'N';
+
+      Pedido.ParamByName('IdCliente').AsInteger := ComboBoxCliente.KeyValue;
+
+      Pedido.ExecSQL;
+
+      Dados.ApagarLanchesAdicionados(FIdPedido);
+
+      if not LanchesAdicionados.IsEmpty then
+      begin
+        CadastrarLanchesAdicionados(Pedido.ParamByName('IdPedido').AsInteger);
+      end;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o Pedido: ' + E.Message);
+      end;
+    end;
+  finally
+    Pedido.Free;
+  end;
+
+end;
+
+procedure TTelaPedidoCadastro.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  IngredientesAdicionais.EmptyDataSet;
+  LanchesAdicionados.EmptyDataSet;
+end;
+
+procedure TTelaPedidoCadastro.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    Perform(WM_NEXTDLGCTL, 0, 0);
+  end;
+end;
+
+procedure TTelaPedidoCadastro.FormShow(Sender: TObject);
+begin
+  if not Dados.ConsultaIngrediente.Active then
+    Dados.ConsultaIngrediente.CreateDataSet;
+
+  if not Dados.ConsultaLanche.Active then
+    Dados.ConsultaLanche.CreateDataSet;
+
+  if not LanchesAdicionados.Active then
+    LanchesAdicionados.CreateDataSet;
+
+  if not IngredientesAdicionais.Active then
+    IngredientesAdicionais.CreateDataSet;
+
+  if not Dados.ConsultaCliente.Active then
+    Dados.ConsultaCliente.CreateDataSet;
+
+  FValorDolar := ObterCotacaoDolar();
+
+  if FTipoOperacao = 'E' then
+    begin
+      EditIdPedido.Text := IntToStr(FIdPedido);
+      EditData.Date := FData;
+      EditValor.Text := FloatToStr(FValor);
+      EditValorEmDolar.Text := FormatFloat('#,##0.00', FValorDolar * FValor);
+      CheckBoxIngredienteAdicional.Checked := FIngredienteAdicional = 'S';
+      ComboboxCliente.KeyValue := FIdCliente;
+
+      Dados.CarregarLanchesAdicionados(FIdPedido, LanchesAdicionados);
+
+      CheckBoxIngredienteAdicional.Enabled := not LanchesAdicionados.IsEmpty;
+
+      if FIngredienteAdicional = 'S' then
+      begin
+        IngredientesAdicionais.MasterSource := nil;
+        IngredientesAdicionais.MasterFields := '';
+        IngredientesAdicionais.IndexFieldNames := '';
+
+        try
+          Dados.CarregarIngredientesAdicionais(FIdPedido, LanchesAdicionados, IngredientesAdicionais);
+        finally
+          IngredientesAdicionais.MasterSource := DataSourceLanche;
+          IngredientesAdicionais.MasterFields := 'IdLanche';
+          IngredientesAdicionais.IndexFieldNames := 'IdLanche';
+        end;
+      end;
+    end
+  else
+    EditIdPedido.Text := IntToStr(Dados.GerarId('Pedido', 'IdPedido'));
+
+  StatusBar.Panels[0].Text := ' *Cotação do dólar (' + DateToStr(Date) + '): R$: ' + FormatFloat('#,##0.00', FValorDolar);
+end;
+
+function TTelaPedidoCadastro.GetData: TDate;
+begin
+  Result := FData;
+end;
+
+function TTelaPedidoCadastro.GetIdCliente: Integer;
+begin
+  Result := FIdCliente;
+end;
+
+function TTelaPedidoCadastro.GetIdPedido: Integer;
+begin
+  Result := FIdPedido;
+end;
+
+function TTelaPedidoCadastro.GetIngredienteAdicional: String;
+begin
+  Result := FIngredienteAdicional;
+end;
+
+function TTelaPedidoCadastro.GetTipoOperacao: String;
+begin
+  Result := FTipoOperacao;
+end;
+
+function TTelaPedidoCadastro.GetValor: Real;
+begin
+  Result := FValor;
+end;
+
+function TTelaPedidoCadastro.ObterCotacaoDolar(): Real;
+var
+  Cotacao: Real;
+  CotacaoDolar: TCotacaoDolar;
+begin
+  Cotacao := 0;
+  CotacaoDolar := TCotacaoDolar.Create;
+
+  try
+    try
+      Cotacao := CotacaoDolar.ObterCotacao;
+    except
+      on E: Exception do
+      ShowMessage('Falha ao obter cotação do dólar: ' + E.Message);
+    end;
+  finally
+    Result := Cotacao;
+    CotacaoDolar.Free;
+  end;
+end;
+
+procedure TTelaPedidoCadastro.RemoverIngredienteExtra;
+var
+  ValorLanche: Real;
+begin
+  ValorLanche := StrToFloatDef(EditValor.Text, 0) - IngredientesAdicionais.FieldByName('Valor').AsFloat;
+
+  IngredientesAdicionais.Delete;
+
+  EditValor.Text := FloatToStr(ValorLanche);
+  EditValorEmDolar.Text := FormatFloat('#,##0.00', FValorDolar * ValorLanche);
+end;
+
+procedure TTelaPedidoCadastro.RemoverLanche();
+var
+  ValorLanche: Real;
+begin
+  ValorLanche := StrToFloatDef(EditValor.Text, 0) - LanchesAdicionados.FieldByName('Valor').AsFloat;
+
+  LanchesAdicionados.Delete;
+
+  if LanchesAdicionados.IsEmpty then
+    ValorLanche := 0;
+
+  if not IngredientesAdicionais.IsEmpty and
+     (ValorLanche = 0) then
+  begin
+    IngredientesAdicionais.EmptyDataSet;
+    CheckBoxIngredienteAdicional.Checked := False;
+    CheckBoxIngredienteAdicional.Enabled := False;
+  end;
+
+  EditValor.Text := FloatToStr(ValorLanche);
+  EditValorEmDolar.Text := FormatFloat('#,##0.00', FValorDolar * ValorLanche);
+end;
+
+procedure TTelaPedidoCadastro.SetData(const Value: TDate);
+begin
+  FData := Value;
+end;
+
+procedure TTelaPedidoCadastro.SetIdCliente(const Value: Integer);
+begin
+  FIdCliente := Value;
+end;
+
+procedure TTelaPedidoCadastro.SetIdPedido(const Value: Integer);
+begin
+  FIdPedido := Value;
+end;
+
+procedure TTelaPedidoCadastro.SetIngredienteAdicional(const Value: String);
+begin
+  FIngredienteAdicional := Value;
+end;
+
+procedure TTelaPedidoCadastro.SetTipoOperacao(const Value: String);
+begin
+  FTipoOperacao := Value;
+end;
+
+procedure TTelaPedidoCadastro.SetValor(const Value: Real);
+begin
+  FValor := Value;
+end;
+
+end.

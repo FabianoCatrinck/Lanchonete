@@ -1,0 +1,235 @@
+unit Relatorio;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.Comp.DataSet,
+  ComObj;
+
+type
+  TTelaRelatorio = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    BotaoImprimir: TSpeedButton;
+    GrupoTipoRelatorio: TRadioGroup;
+    EditDataInicial: TDateTimePicker;
+    LabelData: TLabel;
+    EditDataFinal: TDateTimePicker;
+    LabelDataFinal: TLabel;
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure BotaoImprimirClick(Sender: TObject);
+  private
+    { Private declarations }
+    function MontarSQLPedidos(): String;
+    function MontarSQLLanches(): String;
+    function MontarSQLIngredientes(): String;
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TTelaRelatorio.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaRelatorio.BotaoImprimirClick(Sender: TObject);
+var
+  Consulta: TFDQuery;
+  ExcelApp, Workbook, Worksheet: OleVariant;
+  Col, Linha: Integer;
+  FileName,
+  Titulo: string;
+  SaveDlg: TSaveDialog;
+begin
+  Consulta := TFDQuery.Create(nil);
+  try
+    Consulta.Connection := Dados.FDConnection;
+
+    case GrupoTipoRelatorio.itemindex of
+      0: begin
+           Titulo := 'Total de pedidos realizados em um período';
+           Consulta.SQL.Add(MontarSQLPedidos());
+           Consulta.ParamByName('inicio').AsDate := editdatainicial.date;
+           Consulta.ParamByName('fim').AsDate := editdatafinal.date;
+         end;
+
+      1: begin
+           Titulo := 'Ingredientes mais utilizados';
+           Consulta.SQL.Add(MontarSQLIngredientes());
+         end;
+      else
+        begin
+          Titulo := 'Lanches mais vendidos';
+          Consulta.SQL.Add(MontarSQLLanches);
+        end;
+    end;
+
+    Consulta.Open;
+
+    if Consulta.IsEmpty then
+    begin
+      ShowMessage('Nenhum registro encontrado para exportar.');
+      Exit;
+    end;
+
+
+    // --- Preparar diálogo de salvamento ---
+    SaveDlg := TSaveDialog.Create(nil);
+    try
+      SaveDlg.DefaultExt := 'xlsx';
+      SaveDlg.Filter := 'Excel files (*.xlsx)|*.xlsx|CSV files (*.csv)|*.csv|All files (*.*)|*.*';
+      SaveDlg.FileName := Format('Relatorio_%s.xlsx', [FormatDateTime('yyyy-mm-dd_hhnnss', Now)]);
+      if not SaveDlg.Execute then
+      begin
+        // Usuário cancelou; ainda assim podemos abrir no Excel (opcional).
+        // Aqui vamos apenas abrir no Excel sem salvar.
+        FileName := '';
+      end
+      else
+        FileName := SaveDlg.FileName;
+    finally
+      SaveDlg.Free;
+    end;
+
+    // --- Criar instância do Excel ---
+try
+  ExcelApp := CreateOleObject('Excel.Application');
+except
+  on E: Exception do
+  begin
+    ShowMessage('Não foi possível iniciar o Excel via OLE. Erro: ' + E.Message);
+    Exit;
+  end;
+end;
+
+try
+  ExcelApp.Visible := False;
+  ExcelApp.DisplayAlerts := False;
+
+  Workbook := ExcelApp.Workbooks.Add;
+  Worksheet := Workbook.Worksheets[1];
+
+  // --- TÍTULO NA PRIMEIRA LINHA ---
+  Worksheet.Cells[1, 1] := Titulo;
+  Worksheet.Rows[1].Font.Bold := True;
+  Worksheet.Rows[1].Font.Size := 14;
+
+  // Cabeçalhos começam na linha 3
+  for Col := 0 to Consulta.FieldCount - 1 do
+    Worksheet.Cells[3, Col + 1] := Consulta.Fields[Col].DisplayName;
+
+  Worksheet.Rows[3].Font.Bold := True;
+
+  // --- Dados começam na linha 4 ---
+  Linha := 4;
+  Consulta.First;
+  while not Consulta.EOF do
+  begin
+    for Col := 0 to Consulta.FieldCount - 1 do
+      Worksheet.Cells[Linha, Col + 1] := Consulta.Fields[Col].AsString;
+    Inc(Linha);
+    Consulta.Next;
+  end;
+
+  Worksheet.Columns.AutoFit;
+
+      // Se o usuário escolheu salvar em arquivo, salva (.xlsx)
+      if FileName <> '' then
+      begin
+        try
+          // Excel 2007+ XLSX -> FileFormat = 51
+          Workbook.SaveAs(FileName, 51);
+          ShowMessage('Arquivo salvo em: ' + FileName);
+        except
+          on E: Exception do
+            ShowMessage('Erro ao salvar o arquivo: ' + E.Message);
+        end;
+      end;
+
+      // Mostra o Excel para o usuário
+      ExcelApp.Visible := True;
+      ExcelApp.DisplayAlerts := True;
+
+      // Liberar referências locais (vai deixar o Excel aberto para o usuário)
+      Worksheet := Unassigned;
+      Workbook := Unassigned;
+      ExcelApp := Unassigned;
+    except
+      on E: Exception do
+      begin
+        // Se ocorrer erro, tenta encerrar o Excel
+        try
+          if not VarIsEmpty(ExcelApp) and not VarIsNull(ExcelApp) then
+          begin
+            ExcelApp.Quit;
+            ExcelApp := Unassigned;
+          end;
+        except
+        end;
+        ShowMessage('Erro durante a exportação para Excel: ' + E.Message);
+      end;
+    end;
+
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+
+end;
+
+function TTelaRelatorio.MontarSQLIngredientes(): String;
+var
+  SQL: String;
+begin
+  //Ingredientes mais utilizados..
+  SQL := ' select count(pi.idingrediente) as quantidade, pi.idingrediente, i.nomeingrediente '+
+         ' from PedidoDetalheIngrediente pi ' +
+         ' join ingrediente i on i.idingrediente = pi.idingrediente ' +
+         ' group by i.idingrediente ';
+
+  Result := SQL;
+end;
+
+function TTelaRelatorio.MontarSQLLanches(): String;
+var
+  SQL: String;
+begin
+  //Lanches mais vendidos.
+  SQL := ' select count(pl.idlanche) as quantidade, pl.idlanche, l.nomelanche  '+
+         ' from PedidoDetalheLanche pl ' +
+         ' join lanche l on l.IdLanche = pl.idlanche ' +
+         ' group by l.idlanche ';
+
+  Result := SQL;
+end;
+
+function TTelaRelatorio.MontarSQLPedidos(): String;
+var
+  SQL: String;
+begin
+  //Total de pedidos realizados em um período
+  SQL := ' select sum(valor) as total   '+
+         ' from pedido ' +
+         ' where data between :Inicio and :fim ';
+
+  Result := SQL;
+end;
+
+end.

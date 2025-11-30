@@ -1,0 +1,295 @@
+unit IngredienteCadastro;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  Data.DB, FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  Vcl.Mask;
+
+
+type
+  TTelaIngredienteCadastro = class(TForm)
+    PanelRodape: TPanel;
+    BotaoCancelar: TSpeedButton;
+    BotaoGravar: TSpeedButton;
+    PanelDados: TPanel;
+    LabelCodigo: TLabel;
+    LabelNome: TLabel;
+    LabelValor: TLabel;
+    EditCodigo: TEdit;
+    EditNome: TEdit;
+    EditValor: TMaskEdit;
+    procedure BotaoCancelarClick(Sender: TObject);
+    procedure BotaoGravarClick(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure EditCodigoKeyPress(Sender: TObject; var Key: Char);
+    procedure EditValorKeyPress(Sender: TObject; var Key: Char);
+    procedure FormShow(Sender: TObject);
+  private
+    { Private declarations }
+    FTipoOperacao,   //C=Cadastro; E=Edição
+    FNome,
+    FCodigo: String;
+    FValor: Real;
+
+    procedure SetValor(const Value: Real);
+    function GetValor(): Real;
+    procedure SetCodigo(const Value: String);
+    function GetCodigo(): String;
+    procedure SetNomeIngrediente(const Value: String);
+    function GetNomeIngrediente(): String;
+    procedure SetTipoOperacao(const Value: String);
+    function GetTipoOperacao(): String;
+    function ValidarCampos(): Boolean;
+    function CadastrarIngrediente(): Boolean;
+    function EditarIngrediente(): Boolean;
+  public
+    { Public declarations }
+    property TipoOperacao: String read GetTipoOperacao write SetTipoOperacao;
+    property Nome: String read GetNomeIngrediente write SetNomeIngrediente;
+    property Codigo: String read GetCodigo write SetCodigo;
+    property Valor: Real read GetValor write SetValor;
+  end;
+
+var
+  TelaIngredienteCadastro: TTelaIngredienteCadastro;
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TTelaIngredienteCadastro.BotaoCancelarClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaIngredienteCadastro.BotaoGravarClick(Sender: TObject);
+begin
+  if ValidarCampos then
+  begin
+    if FTipoOperacao = 'C' then
+      begin
+        if CadastrarIngrediente then
+        begin
+          ShowMessage('Ingrediente cadastrado com sucesso!');
+          Close;
+        end;
+      end
+    else
+      begin
+        if EditarIngrediente then
+        begin
+          ShowMessage('Ingrediente editado com sucesso!');
+          Close;
+        end;
+      end;
+  end;
+end;
+
+function TTelaIngredienteCadastro.CadastrarIngrediente: Boolean;
+var
+  Ingrediente: TFDQuery;
+begin
+  Result := False;
+  Ingrediente := TFDQuery.Create(nil);
+
+  try
+    try
+      Ingrediente.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      if Dados.BuscarIngrediente(editCodigo.Text) then
+      begin
+        ShowMessage('Já existe um ingrediente com este código!');
+        editCodigo.SetFocus;
+        Dados.FDConnection.Rollback;
+        Exit;
+      end;
+
+      Ingrediente.SQL.Add('INSERT INTO Ingrediente (IdIngrediente, CodigoIngrediente, NomeIngrediente, Valor)');
+      Ingrediente.SQL.Add('VALUES (:IdIngrediente, :CodigoIngrediente, :NomeIngrediente, :Valor)');
+
+      Ingrediente.ParamByName('IdIngrediente').AsInteger := Dados.GerarId('Ingrediente', 'IdIngrediente');
+      Ingrediente.ParamByName('CodigoIngrediente').AsString := editCodigo.Text;
+      Ingrediente.ParamByName('NomeIngrediente').AsString := editNome.Text;
+      Ingrediente.ParamByName('Valor').AsFloat := StrToFloatDef(EditValor.Text, 0);
+
+      Ingrediente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o ingrediente: ' + E.Message);
+      end;
+    end;
+
+  finally
+    Ingrediente.Free;
+  end;
+end;
+
+function TTelaIngredienteCadastro.EditarIngrediente: Boolean;
+var
+  Ingrediente: TFDQuery;
+begin
+  Result := False;
+  Ingrediente := TFDQuery.Create(nil);
+
+  try
+    try
+      Ingrediente.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Ingrediente.SQL.Add('UPDATE Ingrediente');
+      Ingrediente.SQL.Add('SET NomeIngrediente = :NomeIngrediente, Valor = :Valor ');
+      Ingrediente.SQL.Add('WHERE CodigoIngrediente = :CodigoIngrediente');
+
+      Ingrediente.ParamByName('CodigoIngrediente').AsString := editCodigo.Text;
+      Ingrediente.ParamByName('NomeIngrediente').AsString := editNome.Text;
+      Ingrediente.ParamByName('Valor').AsFloat := StrtoFloat(editValor.Text);
+
+      Ingrediente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao gravar o ingrediente: ' + E.Message);
+      end;
+    end;
+  finally
+    Ingrediente.Free;
+  end;
+end;
+
+procedure TTelaIngredienteCadastro.EditCodigoKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9', #8, #9, #13]) then
+  begin
+    Key := #0;
+  end;
+end;
+
+procedure TTelaIngredienteCadastro.EditValorKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+  if not CharInSet(Key, ['0'..'9','.',',', #8, #9, #13]) then
+  begin
+    Key := #0;
+  end;
+end;
+
+procedure TTelaIngredienteCadastro.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    Perform(WM_NEXTDLGCTL, 0, 0);
+  end;
+end;
+
+procedure TTelaIngredienteCadastro.FormShow(Sender: TObject);
+begin
+  EditCodigo.Enabled := FTipoOperacao = 'C';
+
+  if FTipoOperacao = 'E' then
+  begin
+    EditCodigo.Text := FCodigo;
+    EditNome.Text := FNome;
+    EditValor.Text := FloatToStr(FValor);
+  end;
+end;
+
+function TTelaIngredienteCadastro.GetCodigo: String;
+begin
+  Result := FCodigo;
+end;
+
+function TTelaIngredienteCadastro.GetNomeIngrediente: String;
+begin
+  Result := FNome;
+end;
+
+function TTelaIngredienteCadastro.GetTipoOperacao: String;
+begin
+  Result := FTipoOperacao;
+end;
+
+function TTelaIngredienteCadastro.GetValor: Real;
+begin
+  Result := FValor;
+end;
+
+procedure TTelaIngredienteCadastro.SetCodigo(const Value: String);
+begin
+  FCodigo := Value;
+end;
+
+
+procedure TTelaIngredienteCadastro.SetNomeIngrediente(const Value: String);
+begin
+  FNome := Value;
+end;
+
+procedure TTelaIngredienteCadastro.SetTipoOperacao(const Value: String);
+begin
+  FTipoOperacao := Value;
+end;
+
+procedure TTelaIngredienteCadastro.SetValor(const Value: Real);
+begin
+  FValor := Value;
+end;
+
+function TTelaIngredienteCadastro.ValidarCampos: Boolean;
+begin
+  Result := False;
+
+  if Trim(editCodigo.Text) = '' then
+  begin
+    ShowMessage('Informe o código do ingrediente.');
+    editCodigo.SetFocus;
+    Exit;
+  end;
+
+  if Trim(editNome.Text) = '' then
+  begin
+    ShowMessage('Informe o nome do ingrediente.');
+    editNome.SetFocus;
+    Exit;
+  end;
+
+  if StrToFloatDef(editValor.Text, 0) = 0 then
+  begin
+    ShowMessage('Informe um valor válido.');
+    editValor.SetFocus;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+end.

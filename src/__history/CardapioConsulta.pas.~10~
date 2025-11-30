@@ -1,0 +1,88 @@
+unit CardapioConsulta;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf,
+  FireDAC.DApt.Intf, FireDAC.Comp.DataSet, FireDAC.Comp.Client;
+
+type
+  TTelaCardapioConsulta = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    DBGrid: TDBGrid;
+    Cardapio: TFDMemTable;
+    CardapioCodigo: TIntegerField;
+    CardapioLanche: TStringField;
+    CardapioValor: TFloatField;
+    CardapioIngredientes: TStringField;
+    BotaoImprimir: TSpeedButton;
+    DataSourceCardapio: TDataSource;
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+  private
+    { Private declarations }
+    procedure CarregarCardapio();
+    procedure ObterLanches();
+    procedure ObterIngredientes();
+
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TTelaCardapioConsulta.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaCardapioConsulta.CarregarCardapio;
+begin
+  if not Cardapio.Active then
+     Cardapio.CreateDataSet;
+
+  ObterLanches();
+end;
+
+procedure TTelaCardapioConsulta.FormShow(Sender: TObject);
+begin
+  CarregarCardapio;
+end;
+
+procedure TTelaCardapioConsulta.ObterIngredientes;
+begin
+
+end;
+
+procedure TTelaCardapioConsulta.ObterLanches;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+  try
+    Consulta.Connection := Dados.FDConnection;
+    Consulta.SQL.Add('select l.CodigoLanche as Codigo, l.nomelanche as Lanche, l.Valor');
+    Consulta.SQL.Add('from lanche l');
+    Consulta.SQL.Add('order  by l.codigolanche');
+
+    Consulta.Open;
+
+    Cardapio.CopyDataSet(Consulta);
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+end;
+
+end.

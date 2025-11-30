@@ -1,0 +1,145 @@
+unit Principal;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Buttons, Vcl.ExtCtrls,
+  Vcl.Imaging.pngimage;
+
+type
+  TTelaPrincipal = class(TForm)
+    PanelRodape: TPanel;
+    BotaoIngredientes: TSpeedButton;
+    BotaoUsuarios: TSpeedButton;
+    BotaoLanches: TSpeedButton;
+    BotaoPedidos: TSpeedButton;
+    BotaoCardapio: TSpeedButton;
+    BotaoRelatorios: TSpeedButton;
+    ImagemFundo: TImage;
+    BotaoFechar: TSpeedButton;
+    BotaoSobre: TSpeedButton;
+    procedure FormShow(Sender: TObject);
+    procedure BotaoUsuariosClick(Sender: TObject);
+    procedure BotaoIngredientesClick(Sender: TObject);
+    procedure BotaoLanchesClick(Sender: TObject);
+    procedure BotaoPedidosClick(Sender: TObject);
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure BotaoCardapioClick(Sender: TObject);
+    procedure BotaoRelatoriosClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  TelaPrincipal: TTelaPrincipal;
+
+implementation
+
+{$R *.dfm}
+
+uses Login, UsuarioConsulta, IngredienteConsulta, LancheConsulta,
+  PedidoConsulta, CardapioConsulta, Relatorio;
+
+procedure TTelaPrincipal.BotaoCardapioClick(Sender: TObject);
+var
+  TelaCardapioConsulta: TTelaCardapioConsulta;
+begin
+  TelaCardapioConsulta := TTelaCardapioConsulta.Create(nil);
+
+  try
+    TelaCardapioConsulta.ShowModal;
+  finally
+    FreeAndNil(TelaCardapioConsulta);
+  end;
+end;
+
+procedure TTelaPrincipal.BotaoFecharClick(Sender: TObject);
+begin
+  Application.Terminate;
+end;
+
+procedure TTelaPrincipal.BotaoIngredientesClick(Sender: TObject);
+var
+  TelaIngredienteConsulta: TTelaIngredienteConsulta;
+begin
+  TelaIngredienteConsulta := TTelaIngredienteConsulta.Create(nil);
+
+  try
+    TelaIngredienteConsulta.ShowModal;
+  finally
+    FreeAndNil(TelaIngredienteConsulta);
+  end;
+end;
+
+procedure TTelaPrincipal.BotaoLanchesClick(Sender: TObject);
+var
+  TelaLancheConsulta: TTelaLancheConsulta;
+begin
+  TelaLancheConsulta := TTelaLancheConsulta.Create(nil);
+
+  try
+    TelaLancheConsulta.ShowModal;
+  finally
+    FreeAndNil(TelaLancheConsulta);
+  end;
+end;
+
+procedure TTelaPrincipal.BotaoPedidosClick(Sender: TObject);
+var
+  TelaPedidoConsulta: TTelaPedidoConsulta;
+begin
+  TelaPedidoConsulta := TTelaPedidoConsulta.Create(nil);
+
+  try
+    TelaPedidoConsulta.ShowModal;
+  finally
+    FreeAndNil(TelaPedidoConsulta);
+  end;
+end;
+
+procedure TTelaPrincipal.BotaoRelatoriosClick(Sender: TObject);
+var
+  TelaRelatorio: TTelaRelatorio;
+begin
+  TelaRelatorio := TTelaRelatorio.Create(nil);
+
+  try
+    TelaRelatorio.ShowModal;
+  finally
+    FreeAndNil(TelaRelatorio);
+  end;
+end;
+
+procedure TTelaPrincipal.BotaoUsuariosClick(Sender: TObject);
+var
+  TelaUsuarioConsulta: TTelaUsuarioConsulta;
+begin
+  TelaUsuarioConsulta := TTelaUsuarioConsulta.Create(nil);
+
+  try
+    TelaUsuarioConsulta.ShowModal;
+  finally
+    FreeAndNil(TelaUsuarioConsulta);
+  end;
+end;
+
+procedure TTelaPrincipal.FormShow(Sender: TObject);
+var
+  TelaLogin: TTelaLogin;
+begin
+  TelaLogin := TTelaLogin.Create(nil);
+
+  try
+    TelaLogin.ShowModal;
+
+    if not TelaLogin.UsuarioValidado then
+      Application.Terminate;
+  finally
+    FreeAndNil(TelaLogin);
+  end;
+end;
+
+end.

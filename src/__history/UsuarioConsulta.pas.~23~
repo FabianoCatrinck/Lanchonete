@@ -1,0 +1,145 @@
+unit UsuarioConsulta;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  System.UITypes;
+
+
+type
+  TTelaUsuarioConsulta = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    DBGrid: TDBGrid;
+    BotaoIncluir: TSpeedButton;
+    BotaoAlterar: TSpeedButton;
+    BotaoExcluir: TSpeedButton;
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure BotaoIncluirClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure BotaoAlterarClick(Sender: TObject);
+    procedure BotaoExcluirClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure ApagarUsuario(const IdUsuario: Integer);
+
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses UsuarioCadastro, DataModule;
+
+procedure TTelaUsuarioConsulta.ApagarUsuario(const IdUsuario: Integer);
+var
+  Usuario: TFDQuery;
+begin
+  Usuario := TFDQuery.Create(nil);
+
+  try
+    try
+      Usuario.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Usuario.SQL.Add('DELETE FROM Usuario ');
+      Usuario.SQL.Add('WHERE IdUsuario = :IdUsuario');
+
+      Usuario.ParamByName('IdUsuario').AsInteger := IdUsuario;
+
+      Usuario.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      ShowMessage('Usuário apagado com sucesso.');
+
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o usuário: ' + E.Message);
+      end;
+    end;
+  finally
+    Usuario.Free;
+  end;
+end;
+
+procedure TTelaUsuarioConsulta.BotaoAlterarClick(Sender: TObject);
+var
+  TelaUsuarioCadastro: TTelaUsuarioCadastro;
+begin
+  TelaUsuarioCadastro := TTelaUsuarioCadastro.Create(nil);
+
+  try
+    TelaUsuarioCadastro.TipoOperacao := 'E';
+    TelaUsuarioCadastro.NomeUsuario := Dados.ConsultaUsuario.FieldByName('NomeUsuario').AsString;
+    TelaUsuarioCadastro.TipoAcesso := Dados.ConsultaUsuario.FieldByName('TipoAcessoUsuario').AsString;
+    TelaUsuarioCadastro.Codigo := Dados.ConsultaUsuario.FieldByName('CodigoUsuario').AsString;
+    TelaUsuarioCadastro.Senha := Dados.ConsultaUsuario.FieldByName('Senha').AsString;
+    TelaUsuarioCadastro.ShowModal;
+    Dados.ConsultaUsuario.Close;
+    Dados.ConsultaUsuario.Open;
+  finally
+    FreeAndNil(TelaUsuarioCadastro);
+  end;
+end;
+
+procedure TTelaUsuarioConsulta.BotaoExcluirClick(Sender: TObject);
+begin
+  if not Dados.ConsultaUsuario.IsEmpty then
+    if MessageDlg('Confirma a exclusão do usuário?', mtConfirmation, [mbYes,mbNo], 0) = mrYes then
+      ApagarUsuario(Dados.ConsultaUsuario.FieldByName('IdUsuario').AsInteger);
+
+end;
+
+procedure TTelaUsuarioConsulta.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaUsuarioConsulta.BotaoIncluirClick(Sender: TObject);
+var
+  TelaUsuarioCadastro: TTelaUsuarioCadastro;
+begin
+  TelaUsuarioCadastro := TTelaUsuarioCadastro.Create(nil);
+
+  try
+    TelaUsuarioCadastro.ShowModal;
+    Dados.ConsultaUsuario.Close;
+    Dados.ConsultaUsuario.Open;
+  finally
+    FreeAndNil(TelaUsuarioCadastro);
+  end;
+end;
+
+procedure TTelaUsuarioConsulta.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  Dados.ConsultaUsuario.Close;
+end;
+
+procedure TTelaUsuarioConsulta.FormCreate(Sender: TObject);
+begin
+  Dados.ConsultaUsuario.CreateDataSet;
+  DBGrid.DataSource := Dados.DataSourceUsuario;
+end;
+
+end.

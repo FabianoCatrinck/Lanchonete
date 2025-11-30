@@ -1,0 +1,256 @@
+object Dados: TDados
+  OnCreate = DataModuleCreate
+  Height = 480
+  Width = 640
+  object ImageList: TImageList
+    Left = 64
+    Top = 24
+  end
+  object FDConnection: TFDConnection
+    Params.Strings = (
+      'DriverID=SQLite'
+      'LockingMode=Normal'
+      'Synchronous=Normal'
+      'Database=D:\Lanchonete\bd\Lanchonete.db')
+    Connected = True
+    LoginPrompt = False
+    Left = 320
+    Top = 24
+  end
+  object FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink
+    Left = 176
+    Top = 24
+  end
+  object ConsultaUsuario: TFDQuery
+    Active = True
+    Connection = FDConnection
+    SQL.Strings = (
+      'select *'
+      'from Usuario')
+    Left = 72
+    Top = 96
+    object ConsultaUsuarioIdUsuario: TIntegerField
+      FieldName = 'IdUsuario'
+      Origin = 'IdUsuario'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+      Visible = False
+    end
+    object ConsultaUsuarioCodigoUsuario: TIntegerField
+      DisplayLabel = 'C'#243'digo'
+      FieldName = 'CodigoUsuario'
+      Origin = 'CodigoUsuario'
+      Required = True
+    end
+    object ConsultaUsuarioNomeUsuario: TWideStringField
+      DisplayLabel = 'Nome'
+      FieldName = 'NomeUsuario'
+      Origin = 'NomeUsuario'
+      Required = True
+    end
+    object ConsultaUsuarioTipoAcessoUsuario: TStringField
+      FieldName = 'TipoAcessoUsuario'
+      Origin = 'TipoAcessoUsuario'
+      Visible = False
+      FixedChar = True
+      Size = 1
+    end
+    object ConsultaUsuarioSenha: TStringField
+      FieldName = 'Senha'
+      Origin = 'Senha'
+      Visible = False
+      Size = 35
+    end
+  end
+  object DataSourceUsuario: TDataSource
+    DataSet = ConsultaUsuario
+    Left = 208
+    Top = 96
+  end
+  object ConsultaIngrediente: TFDQuery
+    Active = True
+    Connection = FDConnection
+    SQL.Strings = (
+      'select *'
+      'from Ingrediente')
+    Left = 72
+    Top = 152
+    object ConsultaIngredienteIdIngrediente: TIntegerField
+      FieldName = 'IdIngrediente'
+      Origin = 'IdIngrediente'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+      Visible = False
+    end
+    object ConsultaIngredienteCodigoIngrediente: TIntegerField
+      DisplayLabel = 'C'#243'digo'
+      FieldName = 'CodigoIngrediente'
+      Origin = 'CodigoIngrediente'
+      Required = True
+    end
+    object ConsultaIngredienteNomeIngrediente: TStringField
+      DisplayLabel = 'Ingrediente'
+      FieldName = 'NomeIngrediente'
+      Origin = 'NomeIngrediente'
+      Required = True
+      Size = 60
+    end
+    object ConsultaIngredienteValor: TFloatField
+      FieldName = 'Valor'
+      Origin = 'Valor'
+      Required = True
+      DisplayFormat = '#,##0.00'
+    end
+  end
+  object DataSourceIngrediente: TDataSource
+    DataSet = ConsultaIngrediente
+    Left = 208
+    Top = 152
+  end
+  object ConsultaLanche: TFDQuery
+    Active = True
+    Connection = FDConnection
+    SQL.Strings = (
+      'select *'
+      'from Lanche')
+    Left = 64
+    Top = 216
+    object ConsultaLancheIdLanche: TIntegerField
+      FieldName = 'IdLanche'
+      Origin = 'IdLanche'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Visible = False
+    end
+    object ConsultaLancheCodigoLanche: TIntegerField
+      DisplayLabel = 'C'#243'digo'
+      FieldName = 'CodigoLanche'
+      Origin = 'CodigoLanche'
+      Required = True
+    end
+    object ConsultaLancheNomeLanche: TStringField
+      DisplayLabel = 'Lanche'
+      FieldName = 'NomeLanche'
+      Origin = 'NomeLanche'
+      Size = 60
+    end
+    object ConsultaLancheValor: TFloatField
+      FieldName = 'Valor'
+      Origin = 'Valor'
+      DisplayFormat = '#,##0.00'
+    end
+  end
+  object DataSourceLanche: TDataSource
+    DataSet = ConsultaLanche
+    Left = 200
+    Top = 216
+  end
+  object ConsultaLancheIngrediente: TFDQuery
+    Connection = FDConnection
+    SQL.Strings = (
+      'select *'
+      'from LancheDetalheIngrediente'
+      'where IdLanche = :IdLanche')
+    Left = 72
+    Top = 280
+    ParamData = <
+      item
+        Name = 'IDLANCHE'
+        ParamType = ptInput
+      end>
+    object ConsultaLancheIngredienteIdLancheDetalheIngrediente: TIntegerField
+      FieldName = 'IdLancheDetalheIngrediente'
+      Origin = 'IdLancheDetalheIngrediente'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+    end
+    object ConsultaLancheIngredienteIdLanche: TIntegerField
+      FieldName = 'IdLanche'
+      Origin = 'IdLanche'
+    end
+    object ConsultaLancheIngredienteIdIngrediente: TIntegerField
+      FieldName = 'IdIngrediente'
+      Origin = 'IdIngrediente'
+    end
+    object ConsultaLancheIngredienteValor: TFloatField
+      FieldName = 'Valor'
+      Origin = 'Valor'
+      DisplayFormat = '#,##0.00'
+    end
+  end
+  object DataSourceLancheIngrediente: TDataSource
+    DataSet = ConsultaLancheIngrediente
+    Left = 232
+    Top = 280
+  end
+  object ConsultaPedido: TFDQuery
+    Active = True
+    Connection = FDConnection
+    SQL.Strings = (
+      'select *'
+      'from Pedido')
+    Left = 80
+    Top = 344
+    object ConsultaPedidoIdPedido: TIntegerField
+      DisplayLabel = 'Pedido'
+      FieldName = 'IdPedido'
+      Origin = 'IdPedido'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+    end
+    object ConsultaPedidoValor: TFloatField
+      FieldName = 'Valor'
+      Origin = 'Valor'
+      DisplayFormat = '#,##0.00'
+    end
+    object ConsultaPedidoData: TDateField
+      FieldName = 'Data'
+      Origin = 'Data'
+    end
+    object ConsultaPedidoIngredienteAdicional: TStringField
+      DisplayLabel = 'Ingrediente Adicional?'
+      FieldName = 'IngredienteAdicional'
+      Origin = 'IngredienteAdicional'
+      FixedChar = True
+      Size = 1
+    end
+    object ConsultaPedidoIdUsuario: TIntegerField
+      FieldName = 'IdUsuario'
+      Origin = 'IdUsuario'
+      Visible = False
+    end
+  end
+  object DataSourcePedido: TDataSource
+    DataSet = ConsultaPedido
+    Left = 240
+    Top = 344
+  end
+  object ConsultaPedidoLanche: TFDQuery
+    Connection = FDConnection
+    SQL.Strings = (
+      'select *'
+      'from PedidoDetalheLanche'
+      'where IdPedido = :IdPedido')
+    Left = 80
+    Top = 400
+    ParamData = <
+      item
+        Name = 'IDPEDIDO'
+        ParamType = ptInput
+      end>
+    object ConsultaPedidoLancheIdPedidoDetalheLanche: TIntegerField
+      FieldName = 'IdPedidoDetalheLanche'
+    end
+    object ConsultaPedidoLancheIdPedido: TIntegerField
+      FieldName = 'IdPedido'
+    end
+    object ConsultaPedidoLancheIdLanche: TIntegerField
+      FieldName = 'IdLanche'
+    end
+    object ConsultaPedidoLancheValor: TFloatField
+      FieldName = 'Valor'
+    end
+  end
+  object DataSourcePedidoLanche: TDataSource
+    DataSet = ConsultaPedidoLanche
+    Left = 240
+    Top = 400
+  end
+end

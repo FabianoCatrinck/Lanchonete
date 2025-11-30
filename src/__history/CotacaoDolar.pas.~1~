@@ -1,0 +1,65 @@
+unit CotacaoDolar;
+
+interface
+
+uses
+  System.SysUtils, System.Net.HttpClient, System.JSON;
+
+type
+  ECotacaoErro = class(Exception);
+
+  TCotacaoDolar = class
+  private
+    function ObterJSON(const AUrl: string): string;
+  public
+    function ObterCotacao: Double; // USD -> BRL
+  end;
+
+implementation
+
+{ TCotacaoDolar }
+
+function TCotacaoDolar.ObterJSON(const AUrl: string): string;
+var
+  Http: THTTPClient;
+  Resp: IHTTPResponse;
+begin
+  Http := THTTPClient.Create;
+  try
+    Resp := Http.Get(AUrl);
+
+    if Resp.StatusCode <> 200 then
+      raise ECotacaoErro.CreateFmt('Erro HTTP %d: %s',
+        [Resp.StatusCode, Resp.StatusText]);
+
+    Result := Resp.ContentAsString(TEncoding.UTF8);
+  finally
+    Http.Free;
+  end;
+end;
+
+function TCotacaoDolar.ObterCotacao: Double;
+var
+  JsonTexto: string;
+  JsonObj: TJSONObject;
+  JsonUSD: TJSONObject;
+begin
+  JsonTexto := ObterJSON('https://economia.awesomeapi.com.br/json/last/USD-BRL');
+
+  JsonObj := TJSONObject.ParseJSONValue(JsonTexto) as TJSONObject;
+  if not Assigned(JsonObj) then
+    raise ECotacaoErro.Create('JSON inválido retornado pela API.');
+
+  try
+    JsonUSD := JsonObj.GetValue('USDBRL') as TJSONObject;
+    if JsonUSD = nil then
+      raise ECotacaoErro.Create('Campo "USDBRL" não encontrado na resposta.');
+
+    Result := JsonUSD.GetValue<Double>('bid');
+  finally
+    JsonObj.Free;
+  end;
+end;
+
+end.
+

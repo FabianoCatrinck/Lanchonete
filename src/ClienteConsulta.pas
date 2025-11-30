@@ -1,0 +1,151 @@
+unit ClienteConsulta;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Vcl.ExtCtrls,
+  Data.DB, Vcl.Grids, Vcl.DBGrids,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  FireDAC.Comp.Client, FireDAC.DApt, IdHashMessageDigest, FireDAC.Stan.Param,
+  System.UITypes;
+
+
+type
+  TTelaClienteConsulta = class(TForm)
+    PanelRodape: TPanel;
+    BotaoFechar: TSpeedButton;
+    PanelDados: TPanel;
+    DBGrid: TDBGrid;
+    BotaoIncluir: TSpeedButton;
+    BotaoAlterar: TSpeedButton;
+    BotaoExcluir: TSpeedButton;
+    procedure BotaoFecharClick(Sender: TObject);
+    procedure BotaoIncluirClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure BotaoAlterarClick(Sender: TObject);
+    procedure BotaoExcluirClick(Sender: TObject);
+  private
+    { Private declarations }
+    procedure ApagarCliente(const IdCliente: Integer);
+
+  public
+    { Public declarations }
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses ClienteCadastro, DataModule;
+
+procedure TTelaClienteConsulta.ApagarCliente(const IdCliente: Integer);
+var
+  Cliente: TFDQuery;
+begin
+  Cliente := TFDQuery.Create(nil);
+
+  try
+    try
+      Cliente.Connection := Dados.FDConnection;
+
+      // Inicia transação
+      Dados.FDConnection.StartTransaction;
+
+      Cliente.SQL.Add('DELETE FROM Cliente ');
+      Cliente.SQL.Add('WHERE IdCliente = :IdCliente');
+
+      Cliente.ParamByName('IdCliente').AsInteger := IdCliente;
+
+      Cliente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      Dados.FDConnection.Commit;
+      ShowMessage('Cliente apagado com sucesso.');
+
+    except
+      on E: Exception do
+      begin
+        // Reverte caso dê erro e libera o banco
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o usuário: ' + E.Message);
+      end;
+    end;
+  finally
+    Cliente.Free;
+  end;
+end;
+
+procedure TTelaClienteConsulta.BotaoAlterarClick(Sender: TObject);
+var
+  TelaClienteCadastro: TTelaClienteCadastro;
+begin
+  TelaClienteCadastro := TTelaClienteCadastro.Create(nil);
+
+  try
+    TelaClienteCadastro.TipoOperacao := 'E';
+    TelaClienteCadastro.IdCliente := Dados.ConsultaCliente.FieldByName('IdCliente').AsInteger;
+    TelaClienteCadastro.NomeCliente := Dados.ConsultaCliente.FieldByName('NomeCliente').AsString;
+    TelaClienteCadastro.Codigo := Dados.ConsultaCliente.FieldByName('CodigoCliente').AsString;
+    TelaClienteCadastro.Data := Dados.ConsultaCliente.FieldByName('Data').AsDateTime;
+    TelaClienteCadastro.ShowModal;
+    Dados.ConsultaCliente.Close;
+    Dados.ConsultaCliente.Open;
+  finally
+    FreeAndNil(TelaClienteCadastro);
+  end;
+end;
+
+procedure TTelaClienteConsulta.BotaoExcluirClick(Sender: TObject);
+begin
+  if not Dados.ConsultaCliente.IsEmpty then
+    if MessageDlg('Confirma a exclusão do cliente?', mtConfirmation, [mbYes,mbNo], 0) = mrYes then
+    begin
+      ApagarCliente(Dados.ConsultaCliente.FieldByName('IdCliente').AsInteger);
+      Dados.ConsultaCliente.Close;
+      Dados.ConsultaCliente.Open;
+    end;
+end;
+
+procedure TTelaClienteConsulta.BotaoFecharClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TTelaClienteConsulta.BotaoIncluirClick(Sender: TObject);
+var
+  TelaClienteCadastro: TTelaClienteCadastro;
+begin
+  TelaClienteCadastro := TTelaClienteCadastro.Create(nil);
+
+  try
+    TelaClienteCadastro.TipoOperacao := 'C';
+    TelaClienteCadastro.ShowModal;
+    Dados.ConsultaCliente.Close;
+    Dados.ConsultaCliente.Open;
+  finally
+    FreeAndNil(TelaClienteCadastro);
+  end;
+end;
+
+procedure TTelaClienteConsulta.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  Dados.ConsultaCliente.Close;
+end;
+
+procedure TTelaClienteConsulta.FormCreate(Sender: TObject);
+begin
+  if not Dados.ConsultaCliente.Active then
+    Dados.ConsultaCliente.CreateDataSet;
+
+  DBGrid.DataSource := Dados.DataSourceCliente;
+end;
+
+end.

@@ -1,0 +1,106 @@
+unit Login;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Buttons;
+
+type
+  TTelaLogin = class(TForm)
+    PanelRodape: TPanel;
+    PanelDados: TPanel;
+    LabelUsuario: TLabel;
+    EditNomeUsuario: TEdit;
+    EditSenha: TEdit;
+    LabelSenha: TLabel;
+    BotaoCancelar: TSpeedButton;
+    BotaoLogin: TSpeedButton;
+    procedure BotaoLoginClick(Sender: TObject);
+    procedure BotaoCancelarClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+  private
+    { Private declarations }
+    FUsuarioValidado: Boolean;
+
+    function GetUsuarioValidado: Boolean;
+    procedure SetUsuarioValidado(const Value: Boolean);
+    procedure CancelarOperacao();
+  public
+    { Public declarations }
+    property UsuarioValidado: Boolean read GetUsuarioValidado write SetUsuarioValidado;
+  end;
+
+
+
+implementation
+
+{$R *.dfm}
+
+uses UsuarioCadastro, DataModule;
+
+{ TTelaLogin }
+
+procedure TTelaLogin.BotaoCancelarClick(Sender: TObject);
+begin
+  CancelarOperacao();
+end;
+
+procedure TTelaLogin.BotaoLoginClick(Sender: TObject);
+begin
+  FUsuarioValidado := True;
+  Close;
+end;
+
+procedure TTelaLogin.CancelarOperacao();
+begin
+  FUsuarioValidado := False;
+  Close;
+end;
+
+procedure TTelaLogin.FormShow(Sender: TObject);
+var
+  TelaUsuarioCadastro: TTelaUsuarioCadastro;
+  FechaTela: Boolean;
+begin
+  FechaTela := False;
+
+  if Dados.ConferirPrimeiroAcesso() then
+    begin
+      ShowMessage('Seja bem vindo(a) ao aplicativo Minha Lanchonete, esse é o seu primeiro acesso. Na tela a seguir faça o seu cadastro para poder usar a aplicação:');
+	    TelaUsuarioCadastro:= TTelaUsuarioCadastro.Create(nil);
+
+	    try
+	      TelaUsuarioCadastro.ShowModal;
+
+		    if not TelaUsuarioCadastro.UsuarioCadastrado then
+		      begin
+		        ShowMessage('Você optou por não fazer o cadastro. Não será possível usar a aplicação.');
+            FechaTela := True;
+		      end
+		    else
+		      if EditNomeUsuario.CanFocus then
+		        EditNomeUsuario.SetFocus;
+	    finally
+	      TelaUsuarioCadastro.Release;
+    		FreeAndNil(TelaUsuarioCadastro);
+	    end;
+    end
+  else
+    if EditNomeUsuario.CanFocus then
+      EditNomeUsuario.SetFocus;
+
+  BotaoLogin.Enabled := not FechaTela;
+end;
+
+function TTelaLogin.GetUsuarioValidado: Boolean;
+begin
+  Result := FUsuarioValidado;
+end;
+
+procedure TTelaLogin.SetUsuarioValidado(const Value: Boolean);
+begin
+  FUsuarioValidado := Value;
+end;
+
+end.

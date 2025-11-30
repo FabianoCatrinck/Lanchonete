@@ -1,0 +1,386 @@
+object TelaPedidoCadastro: TTelaPedidoCadastro
+  Left = 0
+  Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Pedido'
+  ClientHeight = 529
+  ClientWidth = 449
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  KeyPreview = True
+  Position = poScreenCenter
+  OnClose = FormClose
+  OnKeyPress = FormKeyPress
+  OnShow = FormShow
+  TextHeight = 15
+  object PanelRodape: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 485
+    Width = 443
+    Height = 41
+    Align = alBottom
+    TabOrder = 6
+    object BotaoCancelar: TSpeedButton
+      AlignWithMargins = True
+      Left = 369
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Cancelar'
+      StyleName = 'Windows'
+      OnClick = BotaoCancelarClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+    object BotaoGravar: TSpeedButton
+      AlignWithMargins = True
+      Left = 293
+      Top = 4
+      Width = 70
+      Height = 33
+      Align = alRight
+      Caption = 'Gravar'
+      StyleName = 'Windows'
+      OnClick = BotaoGravarClick
+      ExplicitLeft = 240
+      ExplicitTop = 1
+      ExplicitHeight = 39
+    end
+  end
+  object PanelDados: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 3
+    Width = 443
+    Height = 62
+    Align = alTop
+    TabOrder = 0
+    object LabelCodigo: TLabel
+      Left = 8
+      Top = 8
+      Width = 37
+      Height = 15
+      Caption = 'Pedido'
+    end
+    object LabelData: TLabel
+      Left = 103
+      Top = 8
+      Width = 24
+      Height = 15
+      Caption = 'Data'
+    end
+    object LabelValor: TLabel
+      Left = 198
+      Top = 8
+      Width = 62
+      Height = 15
+      Caption = 'Valor em R$'
+    end
+    object LabelValorDolar: TLabel
+      Left = 269
+      Top = 8
+      Width = 69
+      Height = 15
+      Caption = 'Valor em US$'
+    end
+    object EditIdPedido: TEdit
+      Left = 8
+      Top = 29
+      Width = 89
+      Height = 23
+      CharCase = ecUpperCase
+      Enabled = False
+      TabOrder = 0
+    end
+    object EditValor: TMaskEdit
+      Left = 199
+      Top = 29
+      Width = 62
+      Height = 23
+      Enabled = False
+      TabOrder = 1
+      Text = ''
+    end
+    object EditData: TDateTimePicker
+      Left = 103
+      Top = 29
+      Width = 90
+      Height = 23
+      Date = 45991.000000000000000000
+      Time = 0.005888506944756955
+      Enabled = False
+      TabOrder = 2
+    end
+    object EditValorEmDolar: TMaskEdit
+      Left = 267
+      Top = 29
+      Width = 62
+      Height = 23
+      Enabled = False
+      TabOrder = 3
+      Text = ''
+    end
+  end
+  object PanelSelecaoLanche: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 71
+    Width = 443
+    Height = 62
+    Align = alTop
+    TabOrder = 1
+    object LabelLanche: TLabel
+      Left = 8
+      Top = 8
+      Width = 38
+      Height = 15
+      Caption = 'Lanche'
+    end
+    object ComboBoxLanche: TDBLookupComboBox
+      Left = 8
+      Top = 29
+      Width = 253
+      Height = 23
+      KeyField = 'IdLanche'
+      ListField = 'NomeLanche'
+      ListSource = Dados.DataSourceLanche
+      TabOrder = 0
+    end
+    object CheckBoxIngredienteAdicional: TCheckBox
+      Left = 267
+      Top = 32
+      Width = 176
+      Height = 17
+      Caption = 'Incluir ingrediente adicional'
+      Enabled = False
+      TabOrder = 1
+      OnClick = CheckBoxIngredienteAdicionalClick
+    end
+  end
+  object PanelListaLanche: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 139
+    Width = 443
+    Height = 134
+    Align = alTop
+    TabOrder = 2
+    object BotaoAdicionarLanche: TSpeedButton
+      AlignWithMargins = True
+      Left = 403
+      Top = 8
+      Width = 25
+      Height = 25
+      Caption = '+'
+      StyleName = 'Windows'
+      OnClick = BotaoAdicionarLancheClick
+    end
+    object BotaoRemoverLanche: TSpeedButton
+      AlignWithMargins = True
+      Left = 403
+      Top = 40
+      Width = 25
+      Height = 25
+      Caption = '-'
+      StyleName = 'Windows'
+      OnClick = BotaoRemoverLancheClick
+    end
+    object DBGrid: TDBGrid
+      AlignWithMargins = True
+      Left = 4
+      Top = 4
+      Width = 393
+      Height = 126
+      Align = alLeft
+      DataSource = DataSourceLanche
+      Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
+      TabOrder = 0
+      TitleFont.Charset = DEFAULT_CHARSET
+      TitleFont.Color = clWindowText
+      TitleFont.Height = -12
+      TitleFont.Name = 'Segoe UI'
+      TitleFont.Style = []
+    end
+  end
+  object StatusBar: TStatusBar
+    Left = 0
+    Top = 463
+    Width = 449
+    Height = 19
+    Panels = <
+      item
+        Width = 50
+      end>
+  end
+  object PanelSelecaoIngrediente: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 279
+    Width = 443
+    Height = 62
+    Align = alTop
+    Enabled = False
+    TabOrder = 3
+    object LabelIngrediente: TLabel
+      Left = 8
+      Top = 8
+      Width = 60
+      Height = 15
+      Caption = 'Ingrediente'
+    end
+    object ComboBoxIngrediente: TDBLookupComboBox
+      Left = 8
+      Top = 29
+      Width = 420
+      Height = 23
+      KeyField = 'IdIngrediente'
+      ListField = 'NomeIngrediente'
+      ListSource = Dados.DataSourceIngrediente
+      TabOrder = 0
+    end
+  end
+  object PanelListaIngrediente: TPanel
+    AlignWithMargins = True
+    Left = 3
+    Top = 347
+    Width = 443
+    Height = 113
+    Align = alClient
+    Enabled = False
+    TabOrder = 4
+    object BotaoAdicionar: TSpeedButton
+      AlignWithMargins = True
+      Left = 403
+      Top = 9
+      Width = 25
+      Height = 25
+      Caption = '+'
+      StyleName = 'Windows'
+      OnClick = BotaoAdicionarClick
+    end
+    object BotaoRemover: TSpeedButton
+      AlignWithMargins = True
+      Left = 403
+      Top = 40
+      Width = 25
+      Height = 25
+      Caption = '-'
+      StyleName = 'Windows'
+      OnClick = BotaoRemoverClick
+    end
+    object DBGrid1: TDBGrid
+      AlignWithMargins = True
+      Left = 4
+      Top = 4
+      Width = 393
+      Height = 105
+      Align = alLeft
+      DataSource = DataSourceIngrediente
+      Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
+      TabOrder = 0
+      TitleFont.Charset = DEFAULT_CHARSET
+      TitleFont.Color = clWindowText
+      TitleFont.Height = -12
+      TitleFont.Name = 'Segoe UI'
+      TitleFont.Style = []
+    end
+  end
+  object DataSourceIngrediente: TDataSource
+    DataSet = IngredientesAdicionais
+    Left = 59
+    Top = 379
+  end
+  object IngredientesAdicionais: TFDMemTable
+    Filtered = True
+    FieldDefs = <>
+    IndexDefs = <>
+    IndexFieldNames = 'IdLanche'
+    MasterSource = DataSourceLanche
+    MasterFields = 'IdLanche'
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvSilentMode]
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    StoreDefs = True
+    Left = 200
+    Top = 379
+    object IngredientesAdicionaisIdPedidoDetalheLanche: TIntegerField
+      FieldName = 'IdPedidoDetalheIngrediente'
+      Visible = False
+    end
+    object IngredientesAdicionaisIdLanche: TIntegerField
+      FieldName = 'IdLanche'
+    end
+    object IngredientesAdicionaisIdIngrediente: TIntegerField
+      FieldName = 'IdIngrediente'
+      Visible = False
+    end
+    object IngredientesAdicionaisCodigoIngrediente: TIntegerField
+      DisplayLabel = 'Codigo'
+      FieldName = 'CodigoIngrediente'
+    end
+    object IngredientesAdicionaisNomeIngrediente: TStringField
+      DisplayLabel = 'Ingrediente'
+      DisplayWidth = 37
+      FieldName = 'NomeIngrediente'
+      Size = 60
+    end
+    object IngredientesAdicionaisValor: TFloatField
+      FieldName = 'Valor'
+      DisplayFormat = '#,##0.00'
+    end
+  end
+  object DataSourceLanche: TDataSource
+    DataSet = LanchesAdicionados
+    Left = 59
+    Top = 315
+  end
+  object LanchesAdicionados: TFDMemTable
+    Filtered = True
+    FieldDefs = <>
+    IndexDefs = <>
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvSilentMode]
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    StoreDefs = True
+    Left = 200
+    Top = 315
+    object LanchesAdicionadosIdPedidoDetalheLanche: TIntegerField
+      FieldName = 'IdPedidoDetalheLanche'
+      Visible = False
+    end
+    object IntegerField1: TIntegerField
+      FieldName = 'IdLanche'
+      Visible = False
+    end
+    object IntegerField2: TIntegerField
+      DisplayLabel = 'Codigo'
+      FieldName = 'CodigoLanche'
+    end
+    object StringField1: TStringField
+      DisplayLabel = 'Lanche'
+      DisplayWidth = 37
+      FieldName = 'NomeLanche'
+      Size = 60
+    end
+    object FloatField1: TFloatField
+      FieldName = 'Valor'
+      DisplayFormat = '#,##0.00'
+    end
+  end
+end

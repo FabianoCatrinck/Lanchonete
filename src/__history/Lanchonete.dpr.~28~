@@ -1,0 +1,31 @@
+﻿program Lanchonete;
+
+uses
+  Vcl.Forms,
+  Login in 'Login.pas' {TelaLogin},
+  Principal in 'Principal.pas' {TelaPrincipal},
+  DataModule in 'DataModule.pas' {Dados: TDataModule},
+  UsuarioConsulta in 'UsuarioConsulta.pas' {TelaUsuarioConsulta},
+  UsuarioCadastro in 'UsuarioCadastro.pas' {TelaUsuarioCadastro},
+  IngredienteCadastro in 'IngredienteCadastro.pas' {TelaIngredienteCadastro},
+  IngredienteConsulta in 'IngredienteConsulta.pas' {TelaIngredienteConsulta},
+  LancheCadastro in 'LancheCadastro.pas' {TelaLancheCadastro},
+  LancheConsulta in 'LancheConsulta.pas' {TelaLancheConsulta},
+  PedidoCadastro in 'PedidoCadastro.pas' {TelaPedidoCadastro},
+  PedidoConsulta in 'PedidoConsulta.pas' {TelaPedidoConsulta},
+  CardapioConsulta in 'CardapioConsulta.pas' {TelaCardapioConsulta},
+  Relatorio in 'Relatorio.pas' {TelaRelatorio},
+  Sobre in 'Sobre.pas' {TelaSobre},
+  CotacaoDolar in 'CotacaoDolar.pas',
+  ClienteConsulta in 'ClienteConsulta.pas' {TelaClienteConsulta};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TDados, Dados);
+  Application.CreateForm(TTelaPrincipal, TelaPrincipal);
+  Application.Run;
+end.
+

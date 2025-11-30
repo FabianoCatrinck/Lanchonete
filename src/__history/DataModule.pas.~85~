@@ -1,0 +1,593 @@
+unit DataModule;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.ImageList, Vcl.ImgList, Vcl.Controls,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Stan.ExprFuncs,
+  FireDAC.Phys.SQLiteWrapper.Stat, FireDAC.Phys.SQLiteDef, FireDAC.Phys.SQLite,
+  Data.DB, FireDAC.Comp.Client, Vcl.Forms, FireDAC.DApt, IdHashMessageDigest,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.Comp.DataSet,
+  Vcl.Dialogs;
+
+type
+  TDados = class(TDataModule)
+    ImageList: TImageList;
+    FDConnection: TFDConnection;
+    FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink;
+    ConsultaUsuario: TFDQuery;
+    ConsultaUsuarioIdUsuario: TIntegerField;
+    ConsultaUsuarioCodigoUsuario: TIntegerField;
+    ConsultaUsuarioNomeUsuario: TWideStringField;
+    ConsultaUsuarioTipoAcessoUsuario: TStringField;
+    ConsultaUsuarioSenha: TStringField;
+    DataSourceUsuario: TDataSource;
+    ConsultaIngrediente: TFDQuery;
+    DataSourceIngrediente: TDataSource;
+    ConsultaIngredienteIdIngrediente: TIntegerField;
+    ConsultaIngredienteCodigoIngrediente: TIntegerField;
+    ConsultaIngredienteNomeIngrediente: TStringField;
+    ConsultaIngredienteValor: TFloatField;
+    ConsultaLanche: TFDQuery;
+    DataSourceLanche: TDataSource;
+    ConsultaLancheIdLanche: TIntegerField;
+    ConsultaLancheCodigoLanche: TIntegerField;
+    ConsultaLancheNomeLanche: TStringField;
+    ConsultaLancheValor: TFloatField;
+    ConsultaLancheIngrediente: TFDQuery;
+    DataSourceLancheIngrediente: TDataSource;
+    ConsultaLancheIngredienteIdLancheDetalheIngrediente: TIntegerField;
+    ConsultaLancheIngredienteIdLanche: TIntegerField;
+    ConsultaLancheIngredienteIdIngrediente: TIntegerField;
+    ConsultaLancheIngredienteValor: TFloatField;
+    ConsultaPedido: TFDQuery;
+    DataSourcePedido: TDataSource;
+    ConsultaPedidoIdPedido: TIntegerField;
+    ConsultaPedidoIdUsuario: TIntegerField;
+    ConsultaPedidoValor: TFloatField;
+    ConsultaPedidoData: TDateField;
+    ConsultaPedidoIngredienteAdicional: TStringField;
+    ConsultaPedidoLanche: TFDQuery;
+    DataSourcePedidoLanche: TDataSource;
+    ConsultaPedidoLancheIdPedidoDetalheLanche: TIntegerField;
+    ConsultaPedidoLancheIdPedido: TIntegerField;
+    ConsultaPedidoLancheIdLanche: TIntegerField;
+    ConsultaPedidoLancheValor: TFloatField;
+    ConsultaIngredienteAdicional: TFDQuery;
+    DataSourceIngredienteAdicional: TDataSource;
+    ConsultaIngredienteAdicionalIdPedidoDetalheIngrediente: TIntegerField;
+    ConsultaIngredienteAdicionalIdPedidoDetalheLanche: TIntegerField;
+    ConsultaIngredienteAdicionalIdIngrediente: TIntegerField;
+    ConsultaIngredienteAdicionalValor: TIntegerField;
+    procedure DataModuleCreate(Sender: TObject);
+  private
+    { Private declarations }
+    FCodigoUsuario: Integer;
+    FTipoAcessoUsuario: String;
+
+    procedure SetTipoAcessoUsuario(const Value: String);
+    function GetTipoAcessoUsuario(): String;
+    procedure SetCodigoUsuario(const Value: Integer);
+    function GetCodigoUsuario(): Integer;
+    procedure ConectarBD;
+    function VerificarPrimeiroAcesso(): Boolean;
+    function GerarCodigoChavePrimaria(const Tabela: String; const Campo: String): Integer;
+    function BuscarUsuarioCadastrado(const Codigo: String): Boolean;
+    function ValidarLogin(const Codigo: String; const Senha: String): Boolean;
+    function BuscarIngredienteCadastrado(const Codigo: String): Boolean;
+    function BuscarLancheCadastrado(const Codigo: String): Boolean;
+    procedure CarregarIngredientesAdicionados(const IdLanche: Integer; Ingredientes: TFdMemTable);
+    procedure ApagarIngredientesAdicionados(const IdLanche: Integer);
+    procedure ApagarIngredientesAdicionaisDoPedido(const IdPedido: Integer);
+    procedure CarregarIngredientesAdicionaisDoPedido(const IdPedido: Integer;
+      const Lanches, Ingredientes: TFdMemTable);
+    procedure CarregarLanchesAdicionadosDoPedido(const IdPedido: Integer; Lanches: TFdMemTable);
+    procedure ApagarLanchesAdicionadosDoPedido(const IdPedido: Integer);
+  public
+    { Public declarations }
+    property CodigoUsuario: Integer read GetCodigoUsuario write SetCodigoUsuario;
+    property TipoAcessoUsuario: String read GetTipoAcessoUsuario write SetTipoAcessoUsuario;
+
+    function ConferirPrimeiroAcesso(): Boolean;
+    function GerarId(const Tabela: String; const Campo: String): Integer;
+    function BuscarUsuario(const Codigo: String): Boolean;
+    function ValidarLoginUsuario(const Codigo: String; const Senha: String): Boolean;
+    function SenhaHash(const Value: string): string;
+    function BuscarIngrediente(const Codigo: String): Boolean;
+    function BuscarLanche(const Codigo: String): Boolean;
+    procedure CarregarIngredientes(const IdLanche: Integer; Ingredientes: TFdMemTable);
+    procedure ApagarIngredientes(const IdLanche: Integer);
+    //procedure ApagarIngredientesAdicionais(const IdPedido: Integer);
+    procedure CarregarIngredientesAdicionais(const IdPedido: Integer; const Lanches, Ingredientes: TFdMemTable);
+    procedure CarregarLanchesAdicionados(const IdPedido: Integer; Lanches: TFdMemTable);
+    procedure ApagarLanchesAdicionados(const IdPedido: Integer);
+  end;
+
+var
+  Dados: TDados;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+{$R *.dfm}
+
+procedure TDados.ApagarIngredientes(const IdLanche: Integer);
+begin
+  ApagarIngredientesAdicionados(IdLanche);
+end;
+
+procedure TDados.ApagarIngredientesAdicionados(const IdLanche: Integer);
+var
+  Ingrediente: TFDQuery;
+begin
+  Ingrediente := TFDQuery.Create(nil);
+
+  try
+    try
+      Ingrediente.Connection := FDConnection;
+
+      // Inicia transação
+      //Dados.FDConnection.StartTransaction;
+
+      Ingrediente.SQL.Add('DELETE FROM LancheDetalheIngrediente ');
+      Ingrediente.SQL.Add('WHERE IdLanche = :IdLanche');
+
+      Ingrediente.ParamByName('IdLanche').AsInteger := IdLanche;
+
+      Ingrediente.ExecSQL;
+
+      // Finaliza transação com sucesso
+      //Dados.FDConnection.Commit;
+    except
+      on E: Exception do
+      begin
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o Ingrediente adicionado ao lanche: ' + E.Message);
+      end;
+    end;
+  finally
+    Ingrediente.Free;
+  end;
+end;
+
+//procedure TDados.ApagarIngredientesAdicionais(const IdPedido: Integer);
+//begin
+//  ApagarIngredientesAdicionaisDoPedido(IdPedido);
+//end;
+
+procedure TDados.ApagarIngredientesAdicionaisDoPedido(const IdPedido: Integer);
+var
+  Ingrediente: TFDQuery;
+begin
+  ConsultaPedidoLanche.Close;
+  ConsultaPedidoLanche.ParamByName('IdPedido').AsInteger := IdPedido;
+  ConsultaPedidoLanche.Open;
+
+  if not ConsultaPedidoLanche.IsEmpty then
+  begin
+    Ingrediente := TFDQuery.Create(nil);
+
+    Ingrediente.Connection := FDConnection;
+
+      // Inicia transação
+      //Dados.FDConnection.StartTransaction;
+
+    Ingrediente.SQL.Add('DELETE FROM PedidoDetalheIngrediente ');
+    Ingrediente.SQL.Add('WHERE IdPedido = :IdPedido');
+
+    while not ConsultaPedidoLanche.Eof do
+    begin
+      try
+      try
+
+
+      Ingrediente.ParamByName('IdPedido').AsInteger := IdPedido;
+
+      Ingrediente.ExecSQL;
+
+      ApagarIngredientesAdicionaisDoPedido(IdPedido);
+
+      // Finaliza transação com sucesso
+      //Dados.FDConnection.Commit;
+    except
+      on E: Exception do
+      begin
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o Ingrediente adicionado ao pedido: ' + E.Message);
+      end;
+    end;
+  finally
+    Ingrediente.Free;
+  end;
+      ConsultaPedidoLanche.Next;
+    end;
+  end;
+end;
+
+procedure TDados.ApagarLanchesAdicionados(const IdPedido: Integer);
+begin
+  ApagarLanchesAdicionadosDoPedido(IdPedido);
+end;
+
+procedure TDados.ApagarLanchesAdicionadosDoPedido(const IdPedido: Integer);
+var
+  Lanche: TFDQuery;
+begin
+  Lanche := TFDQuery.Create(nil);
+
+  try
+    try
+      Lanche.Connection := FDConnection;
+
+      // Inicia transação
+      //Dados.FDConnection.StartTransaction;
+
+      Lanche.SQL.Add('DELETE FROM PedidoDetalheLanche ');
+      Lanche.SQL.Add('WHERE IdPedido = :IdPedido');
+
+      Lanche.ParamByName('IdPedido').AsInteger := IdPedido;
+
+      Lanche.ExecSQL;
+
+      ApagarIngredientesAdicionaisDoPedido(IdPedido);
+
+      // Finaliza transação com sucesso
+      //Dados.FDConnection.Commit;
+    except
+      on E: Exception do
+      begin
+        Dados.FDConnection.Rollback;
+        ShowMessage('Erro ao tentar apagar o Lanche adicionado ao pedido: ' + E.Message);
+      end;
+    end;
+  finally
+    Lanche.Free;
+  end;
+end;
+
+function TDados.BuscarIngrediente(const Codigo: String): Boolean;
+begin
+  Result := BuscarIngredienteCadastrado(Codigo);
+end;
+
+function TDados.BuscarIngredienteCadastrado(const Codigo: String): Boolean;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+  try
+    Consulta.Connection := Dados.FDConnection;
+    Consulta.SQL.Add('SELECT IdIngrediente FROM Ingrediente WHERE CodigoIngrediente = :CodigoIngrediente');
+
+    Consulta.ParamByName('CodigoIngrediente').AsString := Codigo;
+    Consulta.Open;
+
+    Result := not Consulta.IsEmpty;
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+
+end;
+
+function TDados.BuscarLanche(const Codigo: String): Boolean;
+begin
+  Result := BuscarLancheCadastrado(Codigo);
+end;
+
+function TDados.BuscarLancheCadastrado(const Codigo: String): Boolean;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+  try
+    Consulta.Connection := Dados.FDConnection;
+    Consulta.SQL.Add('SELECT IdLanche FROM Lanche WHERE CodigoLanche = :CodigoLanche');
+
+    Consulta.ParamByName('CodigoLanche').AsString := Codigo;
+    Consulta.Open;
+
+    Result := not Consulta.IsEmpty;
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+end;
+
+function TDados.BuscarUsuario(const Codigo: String): Boolean;
+begin
+  Result := BuscarUsuarioCadastrado(Codigo);
+end;
+
+function TDados.BuscarUsuarioCadastrado(const Codigo: String): Boolean;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+  try
+    Consulta.Connection := Dados.FDConnection;
+    Consulta.SQL.Add('SELECT IdUsuario FROM Usuario WHERE CodigoUsuario = :CodigoUsuario');
+
+    Consulta.ParamByName('CodigoUsuario').AsString := Codigo;
+    Consulta.Open;
+
+    Result := not Consulta.IsEmpty;
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+end;
+
+procedure TDados.CarregarIngredientes(const IdLanche: Integer;
+  Ingredientes: TFdMemTable);
+begin
+  CarregarIngredientesAdicionados(IdLanche, Ingredientes);
+end;
+
+procedure TDados.CarregarIngredientesAdicionados(const IdLanche: Integer;
+  Ingredientes: TFdMemTable);
+begin
+  if not Ingredientes.Active then
+    Ingredientes.CreateDataSet
+  else
+    Ingredientes.EmptyDataSet;
+
+  if not ConsultaIngrediente.Active then
+    ConsultaIngrediente.CreateDataSet;
+
+  ConsultaLancheIngrediente.Close;
+  ConsultaLancheIngrediente.ParamByName('IdLanche').AsInteger := IdLanche;
+  ConsultaLancheIngrediente.Open;
+
+  while not ConsultaLancheIngrediente.Eof do
+  begin
+    if ConsultaIngrediente.Locate('IdIngrediente', ConsultaLancheIngrediente.FieldByName('IdIngrediente').AsInteger,[]) then
+    begin
+      Ingredientes.Append;
+      Ingredientes.FieldByName('IdIngrediente').AsInteger := ConsultaLancheIngrediente.FieldByName('IdIngrediente').AsInteger;
+      Ingredientes.FieldByName('CodigoIngrediente').AsInteger := ConsultaIngrediente.FieldByName('CodigoIngrediente').AsInteger;
+      Ingredientes.FieldByName('NomeIngrediente').AsString := ConsultaIngrediente.FieldByName('NomeIngrediente').AsString;
+      Ingredientes.FieldByName('Valor').AsFloat := ConsultaLancheIngrediente.FieldByName('Valor').AsFloat;
+      Ingredientes.Post;
+    end;
+
+    ConsultaLancheIngrediente.Next;
+  end;
+end;
+
+procedure TDados.CarregarIngredientesAdicionais(const IdPedido: Integer;
+  const Lanches, Ingredientes: TFdMemTable);
+begin
+  CarregarIngredientesAdicionaisDoPedido(IdPedido, Lanches, Ingredientes);
+end;
+
+procedure TDados.CarregarIngredientesAdicionaisDoPedido(const IdPedido: Integer;
+  const Lanches, Ingredientes: TFdMemTable);
+begin
+  if not Ingredientes.Active then
+    Ingredientes.CreateDataSet
+  else
+    Ingredientes.EmptyDataSet;
+
+  if not ConsultaIngrediente.Active then
+    ConsultaIngrediente.CreateDataSet;
+
+  ConsultaPedidoLanche.Close;
+  ConsultaPedidoLanche.ParamByName('IdPedido').AsInteger := IdPedido;
+  ConsultaPedidoLanche.Open;
+
+  Lanches.First;
+
+  while not Lanches.Eof do
+  begin
+    if ConsultaPedidoLanche.Locate('IdLanche', Lanches.FieldByName('IdLanche').AsInteger,[]) then
+    begin
+      ConsultaIngredienteAdicional.Close;
+      ConsultaIngredienteAdicional.ParamByName('IdPedidoDetalheLanche').AsInteger := ConsultaPedidoLanche.FieldByName('IdPedidoDetalheLanche').AsInteger;
+      ConsultaIngredienteAdicional.Open;
+
+	  while not ConsultaIngredienteAdicional.Eof do
+	  begin
+	    ConsultaIngrediente.Locate('IdIngrediente', ConsultaIngredienteAdicional.FieldByName('IdIngrediente').AsInteger, []);
+
+		Ingredientes.Append;
+        Ingredientes.FieldByName('IdLanche').AsInteger := ConsultaPedidoLanche.FieldByName('IdLanche').AsInteger;
+        Ingredientes.FieldByName('IdIngrediente').AsInteger := ConsultaIngredienteAdicional.FieldByName('IdIngrediente').AsInteger;
+	    Ingredientes.FieldByName('CodigoIngrediente').AsInteger := ConsultaIngrediente.FieldByName('CodigoIngrediente').AsInteger;
+        Ingredientes.FieldByName('NomeIngrediente').AsString := ConsultaIngrediente.FieldByName('NomeIngrediente').AsString;
+        Ingredientes.FieldByName('Valor').AsFloat := ConsultaIngredienteAdicional.FieldByName('Valor').AsFloat;
+        Ingredientes.Post;
+
+		ConsultaIngredienteAdicional.Next;
+      end;
+	end;
+
+    Lanches.Next;
+  end;
+
+end;
+
+procedure TDados.CarregarLanchesAdicionados(const IdPedido: Integer;
+  Lanches: TFdMemTable);
+begin
+  CarregarLanchesAdicionadosDoPedido(IdPedido, Lanches);
+end;
+
+procedure TDados.CarregarLanchesAdicionadosDoPedido(const IdPedido: Integer;
+  Lanches: TFdMemTable);
+begin
+  if not Lanches.Active then
+    Lanches.CreateDataSet
+  else
+    Lanches.EmptyDataSet;
+
+  if not ConsultaLanche.Active then
+    ConsultaLanche.CreateDataSet;
+
+  ConsultaPedidoLanche.Close;
+  ConsultaPedidoLanche.ParamByName('IdPedido').AsInteger := IdPedido;
+  ConsultaPedidoLanche.Open;
+
+  while not ConsultaPedidoLanche.Eof do
+  begin
+    if ConsultaLanche.Locate('IdLanche', ConsultaPedidoLanche.FieldByName('IdLanche').AsInteger,[]) then
+    begin
+      Lanches.Append;
+      Lanches.FieldByName('IdLanche').AsInteger := ConsultaPedidoLanche.FieldByName('IdLanche').AsInteger;
+      Lanches.FieldByName('CodigoLanche').AsInteger := ConsultaLanche.FieldByName('CodigoLanche').AsInteger;
+      Lanches.FieldByName('NomeLanche').AsString := ConsultaLanche.FieldByName('NomeLanche').AsString;
+      Lanches.FieldByName('Valor').AsFloat := ConsultaPedidoLanche.FieldByName('Valor').AsFloat;
+      Lanches.Post;
+    end;
+
+    ConsultaPedidoLanche.Next;
+  end;
+end;
+
+procedure TDados.ConectarBD;
+var
+  CaminhoDB,
+  LetraUnidade: string;
+begin
+  try
+    LetraUnidade := Copy(ExtractFilePath(Application.ExeName), 1,3);
+    CaminhoDB := LetraUnidade + 'Lanchonete\bd\Lanchonete.db';
+
+    if not FileExists(CaminhoDB) then
+      raise Exception.Create('Banco de dados não encontrado: ' + CaminhoDB);
+
+    FDConnection.Connected := False;
+    FDConnection.Params.Clear;
+
+    FDConnection.DriverName := 'SQLite';
+    FDConnection.Params.Add('Database=' + CaminhoDB);
+    FDConnection.Params.Add('LockingMode=Normal');
+    FDConnection.Params.Add('Synchronous=Normal');
+    FDConnection.LoginPrompt := False;
+    FDConnection.Connected := True;
+  except
+    on E: Exception do
+      raise Exception.Create('Ocorreu o erro: ' + E.Message +
+        ' ao tentar conectar no banco de dados.');
+  end;
+end;
+
+function TDados.ConferirPrimeiroAcesso: Boolean;
+begin
+  Result := VerificarPrimeiroAcesso();
+end;
+
+procedure TDados.DataModuleCreate(Sender: TObject);
+begin
+  ConectarBD;
+end;
+
+function TDados.GerarCodigoChavePrimaria(const Tabela, Campo: String): Integer;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+
+  try
+    Consulta.Connection := FDConnection;
+    Consulta.FetchOptions.Mode := FmAll;
+    Consulta.SQL.Add('select coalesce(max(' + Campo + '),0) + 1 as chave');
+    Consulta.SQL.Add('from ' + Tabela);
+
+    Consulta.Open;
+
+    Result := Consulta.FieldByName('chave').AsInteger;
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+end;
+
+function TDados.GerarId(const Tabela, Campo: String): Integer;
+begin
+  Result := GerarCodigoChavePrimaria(Tabela, Campo);
+end;
+
+function TDados.GetCodigoUsuario(): Integer;
+begin
+  Result := FCodigoUsuario;
+end;
+
+function TDados.GetTipoAcessoUsuario(): String;
+begin
+  Result := FTipoAcessoUsuario;
+end;
+
+function TDados.SenhaHash(const Value: string): string;
+var
+  MD5: TIdHashMessageDigest5;
+begin
+  MD5 := TIdHashMessageDigest5.Create;
+  try
+    Result := MD5.HashStringAsHex(Value);
+  finally
+    MD5.Free;
+  end;
+end;
+
+procedure TDados.SetCodigoUsuario(const Value: Integer);
+begin
+  FCodigoUsuario := Value;
+end;
+
+procedure TDados.SetTipoAcessoUsuario(const Value: String);
+begin
+  FTipoAcessoUsuario := Value;
+end;
+
+function TDados.ValidarLogin(const Codigo, Senha: String): Boolean;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+  try
+    Consulta.Connection := Dados.FDConnection;
+    Consulta.SQL.Add('SELECT Senha, TipoAcessoUsuario FROM Usuario WHERE CodigoUsuario = :CodigoUsuario');
+
+    Consulta.ParamByName('CodigoUsuario').AsString := Codigo;
+    Consulta.Open;
+
+    FCodigoUsuario := StrToInt(Codigo);
+    FTipoAcessoUsuario := Consulta.FieldByName('TipoAcessoUsuario').AsString;
+    Result := Consulta.FieldByName('Senha').AsString = SenhaHash(Senha);
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+end;
+
+function TDados.ValidarLoginUsuario(const Codigo, Senha: String): Boolean;
+begin
+  Result := ValidarLogin(Codigo, Senha);
+end;
+
+function TDados.VerificarPrimeiroAcesso: Boolean;
+var
+  Consulta: TFDQuery;
+begin
+  Consulta := TFDQuery.Create(nil);
+
+  try
+    Consulta.Connection := FDConnection;
+    Consulta.FetchOptions.Mode := FmAll;
+    Consulta.SQL.Add('select IdUsuario');
+    Consulta.SQL.Add('from Usuario');
+    Consulta.SQL.Add('LIMIT 1');
+    Consulta.Open;
+
+    Result := Consulta.IsEmpty;
+  finally
+    Consulta.Close;
+    FreeAndNil(Consulta);
+  end;
+end;
+
+end.
